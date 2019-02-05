@@ -19,12 +19,10 @@ import config
 import sound
 
 class Card(QtWidgets.QPushButton):
-	def __init__(self, icon_index, face_icon_path, back_icon_path):
+	def __init__(self, blank_icon_path=None):
 		super(Card, self).__init__()
-		self.face_icon = QtGui.QIcon(QtGui.QPixmap(face_icon_path))
-		self.back_icon = QtGui.QIcon(QtGui.QPixmap(back_icon_path))
+		self.blank_icon = QtGui.QIcon(QtGui.QPixmap(blank_icon_path))
 
-		self.icon_index  = icon_index
 		self.pos_state   = None  # False: down; True: up
 		self.match_state = False # False: non-matched yet
 
@@ -43,7 +41,8 @@ class Card(QtWidgets.QPushButton):
 		QtWidgets.QMessageBox.warning(self, u'Mouse device', config.MOUSE_ERROR_MSG)
 
 	def toggle_card(self):
-			icon = self.face_icon
+		if self.blank_icon is not None:
+			icon = self.blank_icon
 			self.setIcon(icon)
 			self.setIconSize(QtCore.QSize(75,75))
 
@@ -54,38 +53,126 @@ class Board(QtWidgets.QMainWindow):
 		self.click_tracker = deque(maxlen=2)
 		self.move_tracker  = deque(maxlen=2)
 
+		self.center_coord = ( (config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)//2 )
+
+		self.top_path      = []
+		self.top_direct    = []
+		self.bottom_path   = []
+		self.bottom_direct = []
+
 		self.stream = None
 
-		self.load_card_icons()
+		self.calc_random_paths() # FIXME
 		self.draw_board()
 
-	def load_card_icons(self):
-		icon_folder = os.path.join(config.ICONS_DIR)
-		filenames = np.random.choice(os.listdir(os.path.join(icon_folder)),
-					config.NUM_CARDS, replace=False)
-		self.card_icon_paths = []
-		for f in filenames:
-			self.card_icon_paths.append(os.path.join(icon_folder, f))
+	def calc_random_paths(self): # FIXME
+		if np.random.choice((0,1)):
+			# top left , bottom right
+			self.corner_pair = ( (1,1), (config.BOARD_DIM,config.BOARD_DIM) )
+			directions = (('u','l'), ('r','d'))
+		else:
+			# top right, bottom left
+			self.corner_pair = ( (1,config.BOARD_DIM), (config.BOARD_DIM,1) ) 
+			directions = (('u','r'), ('l','d'))
+
+		# define top path
+		curr_coord = self.center_coord
+		self.top_path.append(tuple(curr_coord))
+		self.top_direct.append('c')
+		while curr_coord != self.corner_pair[0]:
+			next_direct = np.random.choice(directions[0])
+			if next_direct == 'u':
+				x = self.top_path[-1][0]-1
+				y = self.top_path[-1][1]
+				if x < 1:
+					continue
+			elif next_direct == 'l':
+				x = self.top_path[-1][0]
+				y = self.top_path[-1][1]-1
+				if y < 1:
+					continue
+			elif next_direct == 'r':
+				x = self.top_path[-1][0]
+				y = self.top_path[-1][1]+1
+				if y > config.BOARD_DIM:
+					continue
+			else:
+				print('parece que fui tapeado')
+			next_coord = (x,y)
+			self.top_path.append(tuple(next_coord))
+			self.top_direct.append(next_direct)
+			curr_coord = next_coord
+
+		# define bottom path
+		curr_coord = self.center_coord
+		self.bottom_path.append(tuple(curr_coord))
+		self.bottom_direct.append('c')
+		while curr_coord != self.corner_pair[1]:
+			next_direct = np.random.choice(directions[1])
+			if next_direct == 'd':
+				x = self.bottom_path[-1][0]+1
+				y = self.bottom_path[-1][1]
+				if x > config.BOARD_DIM:
+					continue
+			elif next_direct == 'l':
+				x = self.bottom_path[-1][0]
+				y = self.bottom_path[-1][1]-1
+				if y < 1:
+					continue
+			elif next_direct == 'r':
+				x = self.bottom_path[-1][0]
+				y = self.bottom_path[-1][1]+1
+				if y > config.BOARD_DIM:
+					continue
+			else:
+				print('parece que fui tapeado')
+			next_coord = (x,y)
+			curr_coord = next_coord
+			self.bottom_path.append(tuple(curr_coord))
+			self.bottom_direct.append(next_direct)
 
 	def draw_board(self):
-		question_icon_path = os.path.join(config.RESOURCES_DIR, 'question.png')
+		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
 		self.grid = QtWidgets.QGridLayout()
-		for i in range(config.BOARD_ROWS):
-			for j in range(config.BOARD_COLS):
-				face_icon_path = self.card_icon_paths[self.card_pairs[i][j]]
-				card = Card(self.card_pairs[i][j], face_icon_path, question_icon_path)
-				card.clicked.connect(self.check_match)
+		for i in range(1, config.BOARD_DIM+1):
+			for j in range(1, config.BOARD_DIM+1):
+				card = Card(blank_icon_path)
 				self.grid.addWidget(card, i, j)
+
+		# draw arrow borders
+		for i in range(config.BOARD_DIM+2):
+			if i == (config.BOARD_DIM+1) // 2:
+				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_up_black.png')
+				card = Card(arrow_icon_path)
+				self.grid.addWidget(card, 0, i)
+
+				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_down_black.png')
+				card = Card(arrow_icon_path)
+				self.grid.addWidget(card, config.BOARD_DIM+1, i)
+
+				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_left_black.png')
+				card = Card(arrow_icon_path)
+				self.grid.addWidget(card, i, 0)
+
+				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_right_black.png')
+				card = Card(arrow_icon_path)
+				self.grid.addWidget(card, i, config.BOARD_DIM+1)
+			else:
+				card = Card()
+				card.setVisible(False)
+				self.grid.addWidget(card, 0, i)
+				self.grid.addWidget(card, i, 0)
+				self.grid.addWidget(card, i, config.BOARD_DIM+1)
+				self.grid.addWidget(card, config.BOARD_DIM+1, i)
 
 		# set main ui
 		wg_central = QtWidgets.QWidget()
 		wg_central.setLayout(self.grid)
 		self.setCentralWidget(wg_central)
 
-		# set cursor to the first element at the top-left corner
-		self.grid.itemAtPosition(0,0).widget().setFocus()
-		self.grid.itemAtPosition(0,0).widget().setStyleSheet(config.HOVER_FOCUS)
-		self.move_tracker.append((0, 0, self.card_pairs[0][0]))
+		# set cursor to the central element 
+		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setFocus()
+		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setStyleSheet(config.HOVER_FOCUS)
 
 		# create shortcuts for keyboard arrows
 		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Up),    self, self.on_up)
@@ -188,18 +275,18 @@ class Board(QtWidgets.QMainWindow):
 
 		play_sound = True
 
-		if new_row   > config.BOARD_ROWS-1:
-			new_row  = config.BOARD_ROWS-1 # limit the fucking right edge
+		if new_row   > config.BOARD_DIM:
+			new_row  = config.BOARD_DIM  # limit the fucking right edge
 			play_sound = False
-		elif new_row < 0:
-			new_row  = 0                   # limit the fucking left edge
+		elif new_row < 1:
+			new_row  = 1                   # limit the fucking left edge
 			play_sound = False
 
-		if new_col   > config.BOARD_COLS-1:
-			new_col  = config.BOARD_COLS-1 # limit the fucking bottom edge
+		if new_col   > config.BOARD_DIM:
+			new_col  = config.BOARD_DIM  # limit the fucking bottom edge
 			play_sound = False
-		elif new_col < 0:
-			new_col  = 0                   # limit the fucking top edge
+		elif new_col < 1:
+			new_col  = 1                   # limit the fucking top edge
 			play_sound = False
 
 		if self.stream is not None and self.stream.is_active():
@@ -219,8 +306,6 @@ class Board(QtWidgets.QMainWindow):
 
 		button.widget().setFocus()
 		button.widget().setStyleSheet(config.HOVER_FOCUS)
-		self.move_tracker.append(
-					(new_row, new_col, self.card_pairs[new_row][new_col]))
 		if config.DEGUB:
 			print(colored(list(self.move_tracker), 'red'), 
 						colored(list(self.click_tracker), 'green'))

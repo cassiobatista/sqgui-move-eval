@@ -10,15 +10,16 @@ DEGUB = False
 PT_BR = False
 
 RESOURCES_DIR  = os.path.join('.', 'res')
+SOUNDS_DIR     = os.path.join(RESOURCES_DIR, 'sounds')
+ARROW_ICON_DIR = os.path.join(RESOURCES_DIR, 'arrows')
+LINES_ICON_DIR = os.path.join(RESOURCES_DIR, 'lines')
 
-BOARD_ROWS = 3 
-BOARD_COLS = 3
-NUM_CARDS  = BOARD_COLS * BOARD_ROWS // 2
+BOARD_DIM = 7 
 
-assert BOARD_COLS*BOARD_ROWS > 0, \
+assert BOARD_DIM > 0, \
 			u'as dimensões do tabuleiro devem ser positivas, trouxa' if PT_BR else \
 			u'board dimensions must be positive, asshole' 
-assert BOARD_COLS*BOARD_ROWS % 2 == 1, \
+assert BOARD_DIM % 2 == 1, \
 			u'as dimensões devem ser ímpares, retardado' if PT_BR else \
 			u'board dimensions must be odd, dumbass'
 
@@ -29,12 +30,12 @@ HOVER_FOCUS = \
 	'}'
 
 WIN_MSG = \
-	u'Parabéns, você ganhou!' if PT_BR else \
-	u'Congratulations, you win!'
+	u'Parabéns, você conseguiu!' if PT_BR else \
+	u'Congratulations, you did it!'
 
 WINDOW_TITLE = \
-	u'Jogo da Memória em Python 3!' if PT_BR else \
-	u'Memory Game in Python 3!'
+	u'Joguingo em Python 3!' if PT_BR else \
+	u'Little Game in Python 3!'
 
 MOUSE_ERROR_MSG = \
 	u'Por favor, ao invés de utilizar o mouse, utilize somente o teclado.' if PT_BR else \
@@ -50,7 +51,7 @@ INFO = WINDOW_TITLE + '<br>' \
 		u'<br>' + \
 		u'<a href=mailto:cassio.batista.13@gmail.com>cassio.batista.13@gmail.com</a>' + \
 		u'<br><br>' + \
-		u'Copyleft 2018' + \
+		u'Copyleft 2019' + \
 		u'<br>' + \
 		(u'Lab de Visualização, Interação e Sistemas Inteligentes' if PT_BR else \
 		u'Visualization, Interaction and Intelligent Systems Lab') + \
