@@ -118,11 +118,6 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+B'),            self, self.draw_bottom_path)
 
 	def calc_random_paths(self): # FIXME
-		self.corner_pair   = None
-		self.top_path      = []
-		self.top_direct    = []
-		self.bottom_path   = []
-		self.bottom_direct = []
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
 		for i in range(1, config.BOARD_DIM+1):
 			for j in range(1, config.BOARD_DIM+1):
@@ -131,16 +126,18 @@ class Board(QtWidgets.QMainWindow):
 					button.widget().set_icon(blank_icon_path)
 
 		if np.random.choice((0,1)):
-			# top left , bottom right
+			# pair: top left , bottom right
 			self.corner_pair = ( (1,1), (config.BOARD_DIM,config.BOARD_DIM) )
 			directions = (('u','l'), ('r','d'))
 		else:
-			# top right, bottom left
+			# pair: top right, bottom left
 			self.corner_pair = ( (1,config.BOARD_DIM), (config.BOARD_DIM,1) ) 
 			directions = (('u','r'), ('l','d'))
 
 		# define top path
 		curr_coord = self.center_coord
+		self.top_path      = []
+		self.top_direct    = []
 		while curr_coord != self.corner_pair[0]:
 			next_direct = np.random.choice(directions[0])
 			if next_direct == 'u':
@@ -168,6 +165,8 @@ class Board(QtWidgets.QMainWindow):
 
 		# define bottom path
 		curr_coord = self.center_coord
+		self.bottom_path   = []
+		self.bottom_direct = []
 		while curr_coord != self.corner_pair[1]:
 			next_direct = np.random.choice(directions[1])
 			if next_direct == 'd':
