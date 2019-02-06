@@ -71,25 +71,14 @@ class Board(QtWidgets.QMainWindow):
 		# draw arrow borders
 		for i in range(config.BOARD_DIM+2):
 			if i == (config.BOARD_DIM+1) // 2:
-				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_up_black.png')
-				card = Card()
-				card.set_icon(arrow_icon_path)
-				self.grid.addWidget(card, 0, i)
-
-				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_down_black.png')
-				card = Card()
-				card.set_icon(arrow_icon_path)
-				self.grid.addWidget(card, config.BOARD_DIM+1, i)
-
-				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_left_black.png')
-				card = Card()
-				card.set_icon(arrow_icon_path)
-				self.grid.addWidget(card, i, 0)
-
-				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_right_black.png')
-				card = Card()
-				card.set_icon(arrow_icon_path)
-				self.grid.addWidget(card, i, config.BOARD_DIM+1)
+				dir_pos = { 'up'   :(0, i), 'down' :(config.BOARD_DIM+1, i),
+							'left' :(i, 0), 'right':(i, config.BOARD_DIM+1) }
+				for d in dir_pos:
+					arrow_icon_path = os.path.join(
+								config.ARROW_ICON_DIR, 'arrow_'+d+'_black.png')
+					card = Card()
+					card.set_icon(arrow_icon_path)
+					self.grid.addWidget(card, dir_pos[d][0], dir_pos[d][1])
 			else:
 				card = Card()
 				card.setVisible(False)
