@@ -27,8 +27,8 @@ class Card(QtWidgets.QPushButton):
 
 		# define QPushButton properties
 		self.setFixedSize(config.BUTTON_SIZE,config.BUTTON_SIZE)
-		self.setDefault(True);
-		self.setAutoDefault(False);
+		self.setDefault(True)
+		self.setAutoDefault(False)
 
 	# https://stackoverflow.com/questions/20722823/qt-get-mouse-pressed-event-even-if-a-button-is-pressed
 	def mousePressEvent(self, ev):
