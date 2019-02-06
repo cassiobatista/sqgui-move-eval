@@ -21,7 +21,6 @@ import sound
 class Card(QtWidgets.QPushButton):
 	def __init__(self, blank_icon_path=None):
 		super(Card, self).__init__()
-		self.blank_icon = QtGui.QIcon(QtGui.QPixmap(blank_icon_path))
 
 		self.pos_state   = None  # False: down; True: up
 		self.match_state = False # False: non-matched yet
@@ -31,20 +30,15 @@ class Card(QtWidgets.QPushButton):
 		self.setMaximumSize(150,150)
 		self.setDefault(True);
 		self.setAutoDefault(False);
-		self.clicked.connect(self.toggle_card)
-
-		# make sure card starts face down
-		self.toggle_card()
 
 	# https://stackoverflow.com/questions/20722823/qt-get-mouse-pressed-event-even-if-a-button-is-pressed
 	def mousePressEvent(self, ev):
 		QtWidgets.QMessageBox.warning(self, u'Mouse device', config.MOUSE_ERROR_MSG)
 
-	def toggle_card(self):
-		if self.blank_icon is not None:
-			icon = self.blank_icon
-			self.setIcon(icon)
-			self.setIconSize(QtCore.QSize(75,75))
+	def set_icon(self, icon_path):
+		self.icon = QtGui.QIcon(QtGui.QPixmap(icon_path))
+		self.setIcon(self.icon)
+		self.setIconSize(QtCore.QSize(90,90))
 
 class Board(QtWidgets.QMainWindow):
 	def __init__(self):
@@ -77,85 +71,88 @@ class Board(QtWidgets.QMainWindow):
 
 		# define top path
 		curr_coord = self.center_coord
-		self.top_path.append(tuple(curr_coord))
-		self.top_direct.append('c')
 		while curr_coord != self.corner_pair[0]:
 			next_direct = np.random.choice(directions[0])
 			if next_direct == 'u':
-				x = self.top_path[-1][0]-1
-				y = self.top_path[-1][1]
+				x = curr_coord[0]-1
+				y = curr_coord[1]
 				if x < 1:
 					continue
 			elif next_direct == 'l':
-				x = self.top_path[-1][0]
-				y = self.top_path[-1][1]-1
+				x = curr_coord[0]
+				y = curr_coord[1]-1
 				if y < 1:
 					continue
 			elif next_direct == 'r':
-				x = self.top_path[-1][0]
-				y = self.top_path[-1][1]+1
+				x = curr_coord[0]
+				y = curr_coord[1]+1
 				if y > config.BOARD_DIM:
 					continue
 			else:
 				print('parece que fui tapeado')
 			next_coord = (x,y)
-			self.top_path.append(tuple(next_coord))
+			if next_coord != self.corner_pair[0]:
+				self.top_path.append(tuple(next_coord))
 			self.top_direct.append(next_direct)
 			curr_coord = next_coord
 
 		# define bottom path
 		curr_coord = self.center_coord
-		self.bottom_path.append(tuple(curr_coord))
-		self.bottom_direct.append('c')
 		while curr_coord != self.corner_pair[1]:
 			next_direct = np.random.choice(directions[1])
 			if next_direct == 'd':
-				x = self.bottom_path[-1][0]+1
-				y = self.bottom_path[-1][1]
+				x = curr_coord[0]+1
+				y = curr_coord[1]
 				if x > config.BOARD_DIM:
 					continue
 			elif next_direct == 'l':
-				x = self.bottom_path[-1][0]
-				y = self.bottom_path[-1][1]-1
+				x = curr_coord[0]
+				y = curr_coord[1]-1
 				if y < 1:
 					continue
 			elif next_direct == 'r':
-				x = self.bottom_path[-1][0]
-				y = self.bottom_path[-1][1]+1
+				x = curr_coord[0]
+				y = curr_coord[1]+1
 				if y > config.BOARD_DIM:
 					continue
 			else:
 				print('parece que fui tapeado')
 			next_coord = (x,y)
-			curr_coord = next_coord
-			self.bottom_path.append(tuple(curr_coord))
+			if next_coord != self.corner_pair[1]: # FIXME
+				self.bottom_path.append(tuple(next_coord))
 			self.bottom_direct.append(next_direct)
+			curr_coord = next_coord
 
 	def draw_board(self):
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
 		self.grid = QtWidgets.QGridLayout()
 		for i in range(1, config.BOARD_DIM+1):
 			for j in range(1, config.BOARD_DIM+1):
-				card = Card(blank_icon_path)
+				card = Card()
+				card.set_icon(blank_icon_path)
 				self.grid.addWidget(card, i, j)
 
 		# draw arrow borders
 		for i in range(config.BOARD_DIM+2):
 			if i == (config.BOARD_DIM+1) // 2:
 				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_up_black.png')
-				card = Card(arrow_icon_path)
+				card = Card()
+				card.set_icon(arrow_icon_path)
 				self.grid.addWidget(card, 0, i)
 
 				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_down_black.png')
-				card = Card(arrow_icon_path)
+				card = Card()
+				card.set_icon(arrow_icon_path)
 				self.grid.addWidget(card, config.BOARD_DIM+1, i)
 
 				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_left_black.png')
-				card = Card(arrow_icon_path)
+				card = Card()
+				card.set_icon(arrow_icon_path)
 				self.grid.addWidget(card, i, 0)
 
 				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_right_black.png')
-				card = Card(arrow_icon_path)
+				card = Card()
+				card.set_icon(arrow_icon_path)
 				self.grid.addWidget(card, i, config.BOARD_DIM+1)
 			else:
 				card = Card()
@@ -181,6 +178,38 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Right), self, self.on_right)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+Q'),            self, self.close)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+I'),            self, self.about)
+		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+T'),            self, self.draw_top_path)
+		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+B'),            self, self.draw_bottom_path)
+
+	def draw_top_path(self):
+		button = self.grid.itemAtPosition(self.corner_pair[0][0], self.corner_pair[0][1])
+		button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, 'mountain_top.png'))
+		for i in range(len(self.top_path)):
+			button = self.grid.itemAtPosition(self.top_path[i][0], self.top_path[i][1])
+			icon_file = ''.join(d for d in self.top_direct[i:i+2]) + '.png'
+			if 'c' not in icon_file:
+				button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, icon_file))
+		if self.corner_pair[0].count(1) == 2: 
+			icon_file = os.path.join(config.LINES_ICON_DIR, 'climb_up_left') + '.png'
+		else: 
+			icon_file = os.path.join(config.LINES_ICON_DIR, 'climb_up_right') + '.png'
+		button = self.grid.itemAtPosition(self.center_coord[0], self.center_coord[1])
+		button.widget().set_icon(icon_file)
+
+	def draw_bottom_path(self):
+		button = self.grid.itemAtPosition(self.corner_pair[1][0], self.corner_pair[1][1])
+		button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, 'house_camp.png'))
+		for i in range(len(self.bottom_path)):
+			button = self.grid.itemAtPosition(self.bottom_path[i][0], self.bottom_path[i][1])
+			icon_file = ''.join(d for d in self.bottom_direct[i:i+2]) + '.png'
+			if 'c' not in icon_file:
+				button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, icon_file))
+		if self.corner_pair[1].count(5) == 2: 
+			icon_file = os.path.join(config.LINES_ICON_DIR, 'climb_down_right') + '.png'
+		else: 
+			icon_file = os.path.join(config.LINES_ICON_DIR, 'climb_down_left') + '.png'
+		button = self.grid.itemAtPosition(self.center_coord[0], self.center_coord[1])
+		button.widget().set_icon(icon_file)
 
 	def about(self):
 		QtWidgets.QMessageBox.information(self, u'About', config.INFO)

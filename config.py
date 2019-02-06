@@ -14,7 +14,7 @@ SOUNDS_DIR     = os.path.join(RESOURCES_DIR, 'sounds')
 ARROW_ICON_DIR = os.path.join(RESOURCES_DIR, 'arrows')
 LINES_ICON_DIR = os.path.join(RESOURCES_DIR, 'lines')
 
-BOARD_DIM = 7 
+BOARD_DIM = 5 
 
 assert BOARD_DIM > 0, \
 			u'as dimensões do tabuleiro devem ser positivas, trouxa' if PT_BR else \
