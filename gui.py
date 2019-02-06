@@ -26,8 +26,7 @@ class Card(QtWidgets.QPushButton):
 		self.match_state = False # False: non-matched yet
 
 		# define QPushButton properties
-		self.setMinimumSize(100,100)
-		self.setMaximumSize(150,150)
+		self.setFixedSize(config.BUTTON_SIZE,config.BUTTON_SIZE)
 		self.setDefault(True);
 		self.setAutoDefault(False);
 
@@ -38,7 +37,7 @@ class Card(QtWidgets.QPushButton):
 	def set_icon(self, icon_path):
 		self.icon = QtGui.QIcon(QtGui.QPixmap(icon_path))
 		self.setIcon(self.icon)
-		self.setIconSize(QtCore.QSize(90,90))
+		self.setIconSize(QtCore.QSize(config.ICON_SIZE,config.ICON_SIZE))
 
 class Board(QtWidgets.QMainWindow):
 	def __init__(self):
@@ -71,8 +70,8 @@ class Board(QtWidgets.QMainWindow):
 		# draw arrow borders
 		for i in range(config.BOARD_DIM+2):
 			if i == (config.BOARD_DIM+1) // 2:
-				dir_pos = { 'up'   :(0, i), 'down' :(config.BOARD_DIM+1, i),
-							'left' :(i, 0), 'right':(i, config.BOARD_DIM+1) }
+				dir_pos = { 'up'  :(0, i), 'down' :(config.BOARD_DIM+1, i),
+							'left':(i, 0), 'right':(i, config.BOARD_DIM+1) }
 				for d in dir_pos:
 					arrow_icon_path = os.path.join(
 								config.ARROW_ICON_DIR, 'arrow_'+d+'_black.png')

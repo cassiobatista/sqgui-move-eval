@@ -14,8 +14,19 @@ SOUNDS_DIR     = os.path.join(RESOURCES_DIR, 'sounds')
 ARROW_ICON_DIR = os.path.join(RESOURCES_DIR, 'arrows')
 LINES_ICON_DIR = os.path.join(RESOURCES_DIR, 'lines')
 
-BOARD_DIM = 5 
+BUTTON_SIZE = 100 # NOTE: pixels?
+ICON_SIZE   = 90 # NOTE: pixels?
+BOARD_DIM   = 5 
 
+assert BUTTON_SIZE > 0, \
+			u'o tamanho do botão deve ser um valor positivo' if PT_BR else \
+			u'button size must be a positive value'
+assert ICON_SIZE > 0, \
+			u'o tamanho do ícone deve ser um valor positivo' if PT_BR else \
+			u'icon size must be a positive value'
+assert BUTTON_SIZE > ICON_SIZE, \
+			u'o tamanho do botão deve ser maior que o do ícone' if PT_BR else \
+			u'button size must be greater than icon size' 
 assert BOARD_DIM > 0, \
 			u'as dimensões do tabuleiro devem ser positivas, trouxa' if PT_BR else \
 			u'board dimensions must be positive, asshole' 
@@ -25,7 +36,7 @@ assert BOARD_DIM % 2 == 1, \
 
 HOVER_FOCUS = \
 	'QPushButton::focus { '   + \
-	'    background: black; ' + \
+	'    background: red; ' + \
 	'    color: white; '      + \
 	'}'
 
