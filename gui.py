@@ -48,18 +48,88 @@ class Board(QtWidgets.QMainWindow):
 		self.move_tracker  = deque(maxlen=2)
 
 		self.center_coord = ( (config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)//2 )
-
+		self.corner_pair   = None
 		self.top_path      = []
 		self.top_direct    = []
 		self.bottom_path   = []
 		self.bottom_direct = []
 
 		self.stream = None
+		self.grid   = None
 
-		self.calc_random_paths() # FIXME
 		self.draw_board()
 
+	def draw_board(self):
+		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
+		self.grid = QtWidgets.QGridLayout()
+		for i in range(1, config.BOARD_DIM+1):
+			for j in range(1, config.BOARD_DIM+1):
+				card = Card()
+				card.set_icon(blank_icon_path)
+				self.grid.addWidget(card, i, j)
+
+		# draw arrow borders
+		for i in range(config.BOARD_DIM+2):
+			if i == (config.BOARD_DIM+1) // 2:
+				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_up_black.png')
+				card = Card()
+				card.set_icon(arrow_icon_path)
+				self.grid.addWidget(card, 0, i)
+
+				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_down_black.png')
+				card = Card()
+				card.set_icon(arrow_icon_path)
+				self.grid.addWidget(card, config.BOARD_DIM+1, i)
+
+				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_left_black.png')
+				card = Card()
+				card.set_icon(arrow_icon_path)
+				self.grid.addWidget(card, i, 0)
+
+				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_right_black.png')
+				card = Card()
+				card.set_icon(arrow_icon_path)
+				self.grid.addWidget(card, i, config.BOARD_DIM+1)
+			else:
+				card = Card()
+				card.setVisible(False)
+				self.grid.addWidget(card, 0, i)
+				self.grid.addWidget(card, i, 0)
+				self.grid.addWidget(card, i, config.BOARD_DIM+1)
+				self.grid.addWidget(card, config.BOARD_DIM+1, i)
+
+		# set main ui
+		wg_central = QtWidgets.QWidget()
+		wg_central.setLayout(self.grid)
+		self.setCentralWidget(wg_central)
+
+		# set cursor to the central element 
+		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setFocus()
+		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setStyleSheet(config.HOVER_FOCUS)
+
+		# create shortcuts for keyboard arrows
+		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Up),    self, self.on_up)
+		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Down),  self, self.on_down)
+		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Left),  self, self.on_left)
+		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Right), self, self.on_right)
+		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+Q'),            self, self.close)
+		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+I'),            self, self.about)
+		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+T'),            self, self.draw_top_path)
+		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+B'),            self, self.draw_bottom_path)
+
 	def calc_random_paths(self): # FIXME
+		self.corner_pair   = None
+		self.top_path      = []
+		self.top_direct    = []
+		self.bottom_path   = []
+		self.bottom_direct = []
+		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
+		for i in range(1, config.BOARD_DIM+1):
+			for j in range(1, config.BOARD_DIM+1):
+				if (i,j) != self.center_coord:
+					button = self.grid.itemAtPosition(i, j)
+					button.widget().set_icon(blank_icon_path)
+
 		if np.random.choice((0,1)):
 			# top left , bottom right
 			self.corner_pair = ( (1,1), (config.BOARD_DIM,config.BOARD_DIM) )
@@ -123,65 +193,8 @@ class Board(QtWidgets.QMainWindow):
 			self.bottom_direct.append(next_direct)
 			curr_coord = next_coord
 
-	def draw_board(self):
-		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
-		self.grid = QtWidgets.QGridLayout()
-		for i in range(1, config.BOARD_DIM+1):
-			for j in range(1, config.BOARD_DIM+1):
-				card = Card()
-				card.set_icon(blank_icon_path)
-				self.grid.addWidget(card, i, j)
-
-		# draw arrow borders
-		for i in range(config.BOARD_DIM+2):
-			if i == (config.BOARD_DIM+1) // 2:
-				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_up_black.png')
-				card = Card()
-				card.set_icon(arrow_icon_path)
-				self.grid.addWidget(card, 0, i)
-
-				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_down_black.png')
-				card = Card()
-				card.set_icon(arrow_icon_path)
-				self.grid.addWidget(card, config.BOARD_DIM+1, i)
-
-				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_left_black.png')
-				card = Card()
-				card.set_icon(arrow_icon_path)
-				self.grid.addWidget(card, i, 0)
-
-				arrow_icon_path = os.path.join(config.ARROW_ICON_DIR, 'arrow_right_black.png')
-				card = Card()
-				card.set_icon(arrow_icon_path)
-				self.grid.addWidget(card, i, config.BOARD_DIM+1)
-			else:
-				card = Card()
-				card.setVisible(False)
-				self.grid.addWidget(card, 0, i)
-				self.grid.addWidget(card, i, 0)
-				self.grid.addWidget(card, i, config.BOARD_DIM+1)
-				self.grid.addWidget(card, config.BOARD_DIM+1, i)
-
-		# set main ui
-		wg_central = QtWidgets.QWidget()
-		wg_central.setLayout(self.grid)
-		self.setCentralWidget(wg_central)
-
-		# set cursor to the central element 
-		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setFocus()
-		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setStyleSheet(config.HOVER_FOCUS)
-
-		# create shortcuts for keyboard arrows
-		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Up),    self, self.on_up)
-		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Down),  self, self.on_down)
-		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Left),  self, self.on_left)
-		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Right), self, self.on_right)
-		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+Q'),            self, self.close)
-		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+I'),            self, self.about)
-		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+T'),            self, self.draw_top_path)
-		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+B'),            self, self.draw_bottom_path)
-
 	def draw_top_path(self):
+		self.calc_random_paths()
 		button = self.grid.itemAtPosition(self.corner_pair[0][0], self.corner_pair[0][1])
 		button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, 'mountain_top.png'))
 		for i in range(len(self.top_path)):
@@ -197,6 +210,7 @@ class Board(QtWidgets.QMainWindow):
 		button.widget().set_icon(icon_file)
 
 	def draw_bottom_path(self):
+		self.calc_random_paths()
 		button = self.grid.itemAtPosition(self.corner_pair[1][0], self.corner_pair[1][1])
 		button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, 'house_camp.png'))
 		for i in range(len(self.bottom_path)):
