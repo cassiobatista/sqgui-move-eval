@@ -36,7 +36,7 @@ assert BOARD_DIM % 2 == 1, \
 
 HOVER_FOCUS = \
 	'QPushButton::focus { '   + \
-	'    background: red; ' + \
+	'    background: blue; ' + \
 	'    color: white; '      + \
 	'}'
 

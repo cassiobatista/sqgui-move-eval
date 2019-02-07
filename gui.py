@@ -46,7 +46,7 @@ class Board(QtWidgets.QMainWindow):
 		self.click_tracker = deque(maxlen=2)
 		self.move_tracker  = deque(maxlen=2)
 
-		self.center_coord = ( (config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)//2 )
+		self.center_coord  = ( (config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)//2 )
 		self.corner_pair   = None
 		self.top_path      = []
 		self.top_direct    = []
@@ -124,8 +124,8 @@ class Board(QtWidgets.QMainWindow):
 
 		# define top path
 		curr_coord = self.center_coord
-		self.top_path      = []
-		self.top_direct    = []
+		self.top_path   = []
+		self.top_direct = []
 		while curr_coord != self.corner_pair[0]:
 			next_direct = np.random.choice(directions[0])
 			if next_direct == 'u':
@@ -143,8 +143,6 @@ class Board(QtWidgets.QMainWindow):
 				y = curr_coord[1]+1
 				if y > config.BOARD_DIM:
 					continue
-			else:
-				print('parece que fui tapeado')
 			next_coord = (x,y)
 			if next_coord != self.corner_pair[0]:
 				self.top_path.append(tuple(next_coord))
@@ -172,13 +170,19 @@ class Board(QtWidgets.QMainWindow):
 				y = curr_coord[1]+1
 				if y > config.BOARD_DIM:
 					continue
-			else:
-				print('parece que fui tapeado')
 			next_coord = (x,y)
 			if next_coord != self.corner_pair[1]: # FIXME
 				self.bottom_path.append(tuple(next_coord))
 			self.bottom_direct.append(next_direct)
 			curr_coord = next_coord
+
+	def flash_arrow(self, color, coord):
+		if color == 'red':
+			pass
+		elif color == 'yellow':
+			pass
+		elif color == 'green':
+			pass
 
 	def draw_top_path(self):
 		self.calc_random_paths()
@@ -187,14 +191,16 @@ class Board(QtWidgets.QMainWindow):
 		for i in range(len(self.top_path)):
 			button = self.grid.itemAtPosition(self.top_path[i][0], self.top_path[i][1])
 			icon_file = ''.join(d for d in self.top_direct[i:i+2]) + '.png'
-			if 'c' not in icon_file:
-				button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, icon_file))
-		if self.corner_pair[0].count(1) == 2: 
+			button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, icon_file))
+		if self.corner_pair[0].count(1) == 2:
 			icon_file = os.path.join(config.LINES_ICON_DIR, 'climb_up_left') + '.png'
 		else: 
 			icon_file = os.path.join(config.LINES_ICON_DIR, 'climb_up_right') + '.png'
 		button = self.grid.itemAtPosition(self.center_coord[0], self.center_coord[1])
 		button.widget().set_icon(icon_file)
+		# set cursor to the central element 
+		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setFocus()
+		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setStyleSheet(config.HOVER_FOCUS)
 
 	def draw_bottom_path(self):
 		self.calc_random_paths()
@@ -203,55 +209,25 @@ class Board(QtWidgets.QMainWindow):
 		for i in range(len(self.bottom_path)):
 			button = self.grid.itemAtPosition(self.bottom_path[i][0], self.bottom_path[i][1])
 			icon_file = ''.join(d for d in self.bottom_direct[i:i+2]) + '.png'
-			if 'c' not in icon_file:
-				button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, icon_file))
+			button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, icon_file))
 		if self.corner_pair[1].count(5) == 2: 
 			icon_file = os.path.join(config.LINES_ICON_DIR, 'climb_down_right') + '.png'
 		else: 
 			icon_file = os.path.join(config.LINES_ICON_DIR, 'climb_down_left') + '.png'
 		button = self.grid.itemAtPosition(self.center_coord[0], self.center_coord[1])
 		button.widget().set_icon(icon_file)
+		# set cursor to the central element 
+		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setFocus()
+		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setStyleSheet(config.HOVER_FOCUS)
 
 	def about(self):
 		QtWidgets.QMessageBox.information(self, u'About', config.INFO)
 		return
 
-	def check_match(self):
-		if config.DEGUB:
-			print('pres1', colored(list(self.move_tracker), 'red'), 
-						colored(list(self.click_tracker), 'green'))
-		if len(self.click_tracker) == self.click_tracker.maxlen:
-			self.restore_after_unmatch(from_click=True)
-			self.wav = sound.MOVE
-			threading.Thread(target=self.play, args=(2.0)).start()
-			return
-
-		self.click_tracker.append(self.move_tracker[-1])
-		if len(self.click_tracker) == self.click_tracker.maxlen:
-			matches = [midx[2] for midx in self.click_tracker]
-			if len(set(matches)) == 1:
-				rows = [mx[0] for mx in self.click_tracker]
-				cols = [my[1] for my in self.click_tracker]
-				if (rows[0],cols[0]) == (rows[1],cols[1]):
-					self.click_tracker.clear()
-					threading.Thread(target=self.play, 
-								args=(sound.UNMATCH, 1.0,)).start()
-					return
-				for i in range(2):
-					button = self.grid.itemAtPosition(rows[i], cols[i])
-					button.widget().set_matched(True)
-				self.match_counter += 1
-				if self.match_counter == config.NUM_CARDS:
-					self.win()
-				else:
-					self.wav = sound.MATCH
-					threading.Thread(target=self.play, args=(1.5,)).start()
-			else:
-				self.wav = sound.UNMATCH
-				threading.Thread(target=self.play, args=(1.0,)).start()
-		if config.DEGUB:
-			print('pres2', colored(list(self.move_tracker), 'red'), 
-						colored(list(self.click_tracker), 'green'))
+	#self.wav = sound.MATCH
+	#threading.Thread(target=self.play, args=(1.5,)).start()
+	#self.wav = sound.UNMATCH
+	#threading.Thread(target=self.play, args=(1.0,)).start()
 
 	def close(self):
 		if self.stream is not None and self.stream.is_active():
