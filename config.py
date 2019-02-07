@@ -13,6 +13,7 @@ RESOURCES_DIR  = os.path.join('.', 'res')
 SOUNDS_DIR     = os.path.join(RESOURCES_DIR, 'sounds')
 ARROW_ICON_DIR = os.path.join(RESOURCES_DIR, 'arrows')
 LINES_ICON_DIR = os.path.join(RESOURCES_DIR, 'lines')
+CLIMB_ICON_DIR = os.path.join(RESOURCES_DIR, 'climber')
 
 BUTTON_SIZE = 100 # NOTE: pixels?
 ICON_SIZE   = 90 # NOTE: pixels?

@@ -22,9 +22,6 @@ class Card(QtWidgets.QPushButton):
 	def __init__(self, blank_icon_path=None):
 		super(Card, self).__init__()
 
-		self.pos_state   = None  # False: down; True: up
-		self.match_state = False # False: non-matched yet
-
 		# define QPushButton properties
 		self.setFixedSize(config.BUTTON_SIZE,config.BUTTON_SIZE)
 		self.setDefault(True)
@@ -46,7 +43,19 @@ class Board(QtWidgets.QMainWindow):
 		self.click_tracker = deque(maxlen=2)
 		self.move_tracker  = deque(maxlen=2)
 
-		self.center_coord  = ( (config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)//2 )
+		self.coord = {
+			'center'     :((config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)//2),
+			'arrow_up'   :(0,                       (config.BOARD_DIM+1)//2),
+			'arrow_down' :(config.BOARD_DIM+1,      (config.BOARD_DIM+1)//2),
+			'arrow_left' :((config.BOARD_DIM+1)//2, 0),
+			'arrow_right':((config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)),
+			'corner_target':(),
+			'corner_top_left'    :(1,                1),
+			'corner_top_right'   :(1,                config.BOARD_DIM),
+			'corner_bottom_right':(config.BOARD_DIM, 1),
+			'corner_bottom_left' :(config.BOARD_DIM, config.BOARD_DIM),
+		}
+
 		self.corner_pair   = None
 		self.top_path      = []
 		self.top_direct    = []
@@ -57,6 +66,33 @@ class Board(QtWidgets.QMainWindow):
 		self.grid   = None
 
 		self.draw_board()
+		self.draw_borders()
+		self.draw_ui()
+
+	def place_cursor_at_center(self):
+		self.grid.itemAtPosition(self.coord['center'][0],
+					self.coord['center'][1]).widget().setFocus()
+		self.grid.itemAtPosition(self.coord['center'][0],
+					self.coord['center'][1]).widget().setStyleSheet(config.HOVER_FOCUS)
+
+	def draw_borders(self):
+		for i in range(config.BOARD_DIM+2):
+			if i == (config.BOARD_DIM+1) // 2:
+				for karrow in self.coord:
+					if 'arrow' in karrow:
+						arrow_icon_path = os.path.join(
+									config.ARROW_ICON_DIR, karrow + '_black.png')
+						card = Card()
+						card.set_icon(arrow_icon_path)
+						self.grid.addWidget(card,
+									self.coord[karrow][0], self.coord[karrow][1])
+			else:
+				card = Card()
+				card.setVisible(False)
+				self.grid.addWidget(card, 0, i)
+				self.grid.addWidget(card, i, 0)
+				self.grid.addWidget(card, i, config.BOARD_DIM+1)
+				self.grid.addWidget(card, config.BOARD_DIM+1, i)
 
 	def draw_board(self):
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
@@ -67,33 +103,14 @@ class Board(QtWidgets.QMainWindow):
 				card.set_icon(blank_icon_path)
 				self.grid.addWidget(card, i, j)
 
-		# draw arrow borders
-		for i in range(config.BOARD_DIM+2):
-			if i == (config.BOARD_DIM+1) // 2:
-				dir_pos = { 'up'  :(0, i), 'down' :(config.BOARD_DIM+1, i),
-							'left':(i, 0), 'right':(i, config.BOARD_DIM+1) }
-				for d in dir_pos:
-					arrow_icon_path = os.path.join(
-								config.ARROW_ICON_DIR, 'arrow_'+d+'_black.png')
-					card = Card()
-					card.set_icon(arrow_icon_path)
-					self.grid.addWidget(card, dir_pos[d][0], dir_pos[d][1])
-			else:
-				card = Card()
-				card.setVisible(False)
-				self.grid.addWidget(card, 0, i)
-				self.grid.addWidget(card, i, 0)
-				self.grid.addWidget(card, i, config.BOARD_DIM+1)
-				self.grid.addWidget(card, config.BOARD_DIM+1, i)
-
-		# set main ui
+	# set main ui
+	def draw_ui(self):
 		wg_central = QtWidgets.QWidget()
 		wg_central.setLayout(self.grid)
 		self.setCentralWidget(wg_central)
 
 		# set cursor to the central element 
-		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setFocus()
-		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setStyleSheet(config.HOVER_FOCUS)
+		self.place_cursor_at_center()
 
 		# create shortcuts for keyboard arrows
 		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Up),    self, self.on_up)
@@ -109,7 +126,7 @@ class Board(QtWidgets.QMainWindow):
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
 		for i in range(1, config.BOARD_DIM+1):
 			for j in range(1, config.BOARD_DIM+1):
-				if (i,j) != self.center_coord:
+				if (i,j) != self.coord['center']:
 					button = self.grid.itemAtPosition(i, j)
 					button.widget().set_icon(blank_icon_path)
 
@@ -123,7 +140,7 @@ class Board(QtWidgets.QMainWindow):
 			directions = (('u','r'), ('l','d'))
 
 		# define top path
-		curr_coord = self.center_coord
+		curr_coord = self.coord['center']
 		self.top_path   = []
 		self.top_direct = []
 		while curr_coord != self.corner_pair[0]:
@@ -150,7 +167,7 @@ class Board(QtWidgets.QMainWindow):
 			curr_coord = next_coord
 
 		# define bottom path
-		curr_coord = self.center_coord
+		curr_coord = self.coord['center']
 		self.bottom_path   = []
 		self.bottom_direct = []
 		while curr_coord != self.corner_pair[1]:
@@ -187,38 +204,34 @@ class Board(QtWidgets.QMainWindow):
 	def draw_top_path(self):
 		self.calc_random_paths()
 		button = self.grid.itemAtPosition(self.corner_pair[0][0], self.corner_pair[0][1])
-		button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, 'mountain_top.png'))
+		button.widget().set_icon(os.path.join(config.CLIMB_ICON_DIR, 'mountain_top_no_climber.png'))
 		for i in range(len(self.top_path)):
 			button = self.grid.itemAtPosition(self.top_path[i][0], self.top_path[i][1])
 			icon_file = ''.join(d for d in self.top_direct[i:i+2]) + '.png'
 			button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, icon_file))
 		if self.corner_pair[0].count(1) == 2:
-			icon_file = os.path.join(config.LINES_ICON_DIR, 'climb_up_left') + '.png'
+			icon_file = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_left') + '.png'
 		else: 
-			icon_file = os.path.join(config.LINES_ICON_DIR, 'climb_up_right') + '.png'
-		button = self.grid.itemAtPosition(self.center_coord[0], self.center_coord[1])
+			icon_file = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_right') + '.png'
+		button = self.grid.itemAtPosition(self.coord['center'][0], self.coord['center'][1])
 		button.widget().set_icon(icon_file)
-		# set cursor to the central element 
-		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setFocus()
-		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setStyleSheet(config.HOVER_FOCUS)
+		self.place_cursor_at_center()
 
 	def draw_bottom_path(self):
 		self.calc_random_paths()
 		button = self.grid.itemAtPosition(self.corner_pair[1][0], self.corner_pair[1][1])
-		button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, 'house_camp.png'))
+		button.widget().set_icon(os.path.join(config.CLIMB_ICON_DIR, 'house_camp_no_climber.png'))
 		for i in range(len(self.bottom_path)):
 			button = self.grid.itemAtPosition(self.bottom_path[i][0], self.bottom_path[i][1])
 			icon_file = ''.join(d for d in self.bottom_direct[i:i+2]) + '.png'
 			button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, icon_file))
 		if self.corner_pair[1].count(5) == 2: 
-			icon_file = os.path.join(config.LINES_ICON_DIR, 'climb_down_right') + '.png'
+			icon_file = os.path.join(config.CLIMB_ICON_DIR, 'climb_down_right') + '.png'
 		else: 
-			icon_file = os.path.join(config.LINES_ICON_DIR, 'climb_down_left') + '.png'
-		button = self.grid.itemAtPosition(self.center_coord[0], self.center_coord[1])
+			icon_file = os.path.join(config.CLIMB_ICON_DIR, 'climb_down_left') + '.png'
+		button = self.grid.itemAtPosition(self.coord['center'][0], self.coord['center'][1])
 		button.widget().set_icon(icon_file)
-		# set cursor to the central element 
-		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setFocus()
-		self.grid.itemAtPosition(self.center_coord[0],self.center_coord[1]).widget().setStyleSheet(config.HOVER_FOCUS)
+		self.place_cursor_at_center()
 
 	def about(self):
 		QtWidgets.QMessageBox.information(self, u'About', config.INFO)
