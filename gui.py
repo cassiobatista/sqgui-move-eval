@@ -52,18 +52,20 @@ class Board(QtWidgets.QMainWindow):
 			'corner_bottom_right':(config.BOARD_DIM, config.BOARD_DIM),
 		}
 
+		self.num_moves  = 0
+		self.num_errors = 0
+		self.curr_move  = None
+		self.curr_coord = self.coord['center']
+		self.curr_index = 0
+
 		self.climbing = {
 			'up_path'  :[],
 			'down_path':[],
-			'up_directions':[],
+			'up_directions'  :[],
 			'down_directions':[]
 		}
 
 		self.corner_pair     = ()
-		self.path_directions = ()
-
-		self.bottom_path   = []
-		self.bottom_direct = []
 
 		self.stream = None
 		self.grid   = None
@@ -124,7 +126,30 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+T'),            self, self.draw_top_path)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+B'),            self, self.draw_bottom_path)
 		# TODO create memthod start_game()
+		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'),            self, self.reset_board)
 		##QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'),            self, self.start_game)
+
+	def reset_board(self):
+		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
+		for i in range(1, config.BOARD_DIM+1):
+			for j in range(1, config.BOARD_DIM+1):
+				button = self.grid.itemAtPosition(i, j)
+				button.widget().set_icon(blank_icon_path)
+
+		self.num_moves  = 0
+		self.num_errors = 0
+		self.curr_move  = None
+		self.curr_coord = self.coord['center']
+		self.curr_index = 0
+
+		self.climbing = {
+			'up_path'  :[],
+			'down_path':[],
+			'up_directions'  :[],
+			'down_directions':[]
+		}
+
+		self.corner_pair     = ()
 
 	def calc_random_paths(self): # FIXME
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
@@ -135,21 +160,19 @@ class Board(QtWidgets.QMainWindow):
 					button.widget().set_icon(blank_icon_path)
 
 		if np.random.choice((0,1)):
-			# corner pair: top right, bottom left
 			self.corner_pair     = (self.coord['corner_top_right'], self.coord['corner_bottom_left'])
-			self.path_directions = (('up','right'), ('down','left'))
+			self.path_orientation = (('up','right'), ('down','left'))
 		else:
 			self.corner_pair     = (self.coord['corner_top_left'], self.coord['corner_bottom_right'])
-			self.path_directions = (('up','left'), ('down','right'))
+			self.path_orientation = (('up','left'), ('down','right'))
 
-		# define top path
 		directions = ('up','down')
 		for i in range(2):
 			curr_coord = self.coord['center']
 			self.climbing[directions[i] + '_path'] = []
 			self.climbing[directions[i] + '_directions'] = []
 			while curr_coord != self.corner_pair[i]:
-				next_direct = np.random.choice(self.path_directions[i])
+				next_direct = np.random.choice(self.path_orientation[i])
 				if next_direct == 'up':
 					x = curr_coord[0]-1
 					y = curr_coord[1]
@@ -202,6 +225,7 @@ class Board(QtWidgets.QMainWindow):
 		button = self.grid.itemAtPosition(
 					self.coord['center'][0], self.coord['center'][1])
 		button.widget().set_icon(png)
+		print(self.climbing['up_path'])
 		self.place_cursor_at_center()
 
 	def draw_bottom_path(self):
@@ -251,23 +275,23 @@ class Board(QtWidgets.QMainWindow):
 		self.close()
 
 	def on_up(self):
-		if config.DEGUB:
-			print('   up', end=' ')
+		self.num_moves += 1
+		self.curr_move = 'up'
 		self.move_focus(0, -1)
 
 	def on_down(self):
-		if config.DEGUB:
-			print(' down', end=' ')
+		self.num_moves += 1
+		self.curr_move = 'down'
 		self.move_focus(0, +1)
 
 	def on_left(self):
-		if config.DEGUB:
-			print(' left', end=' ')
+		self.num_moves += 1
+		self.curr_move = 'left'
 		self.move_focus(-1, 0)
 
 	def on_right(self):
-		if config.DEGUB:
-			print('right', end=' ')
+		self.num_moves += 1
+		self.curr_move = 'left'
 		self.move_focus(+1, 0)
 
 	def move_focus(self, dx, dy):
@@ -285,23 +309,32 @@ class Board(QtWidgets.QMainWindow):
 		play_sound = True
 
 		if new_row   > config.BOARD_DIM:
-			new_row  = config.BOARD_DIM  # limit the fucking right edge
+			new_row  = config.BOARD_DIM  # limit the right edge
 			play_sound = False
 		elif new_row < 1:
-			new_row  = 1                   # limit the fucking left edge
+			new_row  = 1                 # limit the left edge
 			play_sound = False
 
 		if new_col   > config.BOARD_DIM:
-			new_col  = config.BOARD_DIM  # limit the fucking bottom edge
+			new_col  = config.BOARD_DIM  # limit the bottom edge
 			play_sound = False
 		elif new_col < 1:
-			new_col  = 1                   # limit the fucking top edge
+			new_col  = 1                 # limit the top edge
 			play_sound = False
 
 		if self.stream is not None and self.stream.is_active():
 			self.stream.stop_stream()
 			sound.MOVE.rewind()
 			sound.OUTBOUND.rewind()
+
+		self.curr_coord = (new_row, new_col)
+		# FIXME: out of bounts if path hasn't been defined yet
+		if self.curr_coord == self.climbing['up_path'][self.curr_index]:
+			self.curr_index += 1
+			print('acertou mano')
+		else:
+			self.num_errors += 1
+			print('errou mano')
 
 		if play_sound:
 			self.wav = sound.MOVE
