@@ -39,10 +39,6 @@ class Card(QtWidgets.QPushButton):
 class Board(QtWidgets.QMainWindow):
 	def __init__(self):
 		super(Board, self).__init__()
-		self.match_counter = 0
-		self.click_tracker = deque(maxlen=2)
-		self.move_tracker  = deque(maxlen=2)
-
 		self.coord = {
 			'center'     :((config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)//2),
 			'arrow_up'   :(0,                       (config.BOARD_DIM+1)//2),
@@ -52,13 +48,20 @@ class Board(QtWidgets.QMainWindow):
 			'corner_target':(),
 			'corner_top_left'    :(1,                1),
 			'corner_top_right'   :(1,                config.BOARD_DIM),
-			'corner_bottom_right':(config.BOARD_DIM, 1),
-			'corner_bottom_left' :(config.BOARD_DIM, config.BOARD_DIM),
+			'corner_bottom_left' :(config.BOARD_DIM, 1),
+			'corner_bottom_right':(config.BOARD_DIM, config.BOARD_DIM),
 		}
 
-		self.corner_pair   = None
-		self.top_path      = []
-		self.top_direct    = []
+		self.climbing = {
+			'up_path'  :[],
+			'down_path':[],
+			'up_directions':[],
+			'down_directions':[]
+		}
+
+		self.corner_pair     = ()
+		self.path_directions = ()
+
 		self.bottom_path   = []
 		self.bottom_direct = []
 
@@ -67,7 +70,7 @@ class Board(QtWidgets.QMainWindow):
 
 		self.draw_board()
 		self.draw_borders()
-		self.draw_ui()
+		self.set_ui_elements()
 
 	def place_cursor_at_center(self):
 		self.grid.itemAtPosition(self.coord['center'][0],
@@ -103,8 +106,7 @@ class Board(QtWidgets.QMainWindow):
 				card.set_icon(blank_icon_path)
 				self.grid.addWidget(card, i, j)
 
-	# set main ui
-	def draw_ui(self):
+	def set_ui_elements(self):
 		wg_central = QtWidgets.QWidget()
 		wg_central.setLayout(self.grid)
 		self.setCentralWidget(wg_central)
@@ -121,6 +123,8 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+I'),            self, self.about)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+T'),            self, self.draw_top_path)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+B'),            self, self.draw_bottom_path)
+		# TODO create memthod start_game()
+		##QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'),            self, self.start_game)
 
 	def calc_random_paths(self): # FIXME
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
@@ -131,67 +135,46 @@ class Board(QtWidgets.QMainWindow):
 					button.widget().set_icon(blank_icon_path)
 
 		if np.random.choice((0,1)):
-			# pair: top left , bottom right
-			self.corner_pair = ( (1,1), (config.BOARD_DIM,config.BOARD_DIM) )
-			directions = (('u','l'), ('r','d'))
+			# corner pair: top right, bottom left
+			self.corner_pair     = (self.coord['corner_top_right'], self.coord['corner_bottom_left'])
+			self.path_directions = (('up','right'), ('down','left'))
 		else:
-			# pair: top right, bottom left
-			self.corner_pair = ( (1,config.BOARD_DIM), (config.BOARD_DIM,1) ) 
-			directions = (('u','r'), ('l','d'))
+			self.corner_pair     = (self.coord['corner_top_left'], self.coord['corner_bottom_right'])
+			self.path_directions = (('up','left'), ('down','right'))
 
 		# define top path
-		curr_coord = self.coord['center']
-		self.top_path   = []
-		self.top_direct = []
-		while curr_coord != self.corner_pair[0]:
-			next_direct = np.random.choice(directions[0])
-			if next_direct == 'u':
-				x = curr_coord[0]-1
-				y = curr_coord[1]
-				if x < 1:
-					continue
-			elif next_direct == 'l':
-				x = curr_coord[0]
-				y = curr_coord[1]-1
-				if y < 1:
-					continue
-			elif next_direct == 'r':
-				x = curr_coord[0]
-				y = curr_coord[1]+1
-				if y > config.BOARD_DIM:
-					continue
-			next_coord = (x,y)
-			if next_coord != self.corner_pair[0]:
-				self.top_path.append(tuple(next_coord))
-			self.top_direct.append(next_direct)
-			curr_coord = next_coord
-
-		# define bottom path
-		curr_coord = self.coord['center']
-		self.bottom_path   = []
-		self.bottom_direct = []
-		while curr_coord != self.corner_pair[1]:
-			next_direct = np.random.choice(directions[1])
-			if next_direct == 'd':
-				x = curr_coord[0]+1
-				y = curr_coord[1]
-				if x > config.BOARD_DIM:
-					continue
-			elif next_direct == 'l':
-				x = curr_coord[0]
-				y = curr_coord[1]-1
-				if y < 1:
-					continue
-			elif next_direct == 'r':
-				x = curr_coord[0]
-				y = curr_coord[1]+1
-				if y > config.BOARD_DIM:
-					continue
-			next_coord = (x,y)
-			if next_coord != self.corner_pair[1]: # FIXME
-				self.bottom_path.append(tuple(next_coord))
-			self.bottom_direct.append(next_direct)
-			curr_coord = next_coord
+		directions = ('up','down')
+		for i in range(2):
+			curr_coord = self.coord['center']
+			self.climbing[directions[i] + '_path'] = []
+			self.climbing[directions[i] + '_directions'] = []
+			while curr_coord != self.corner_pair[i]:
+				next_direct = np.random.choice(self.path_directions[i])
+				if next_direct == 'up':
+					x = curr_coord[0]-1
+					y = curr_coord[1]
+					if x < 1:
+						continue
+				elif next_direct == 'down':
+					x = curr_coord[0]+1
+					y = curr_coord[1]
+					if x > config.BOARD_DIM:
+						continue
+				elif next_direct == 'left':
+					x = curr_coord[0]
+					y = curr_coord[1]-1
+					if y < 1:
+						continue
+				elif next_direct == 'right':
+					x = curr_coord[0]
+					y = curr_coord[1]+1
+					if y > config.BOARD_DIM:
+						continue
+				next_coord = (x,y)
+				if next_coord != self.corner_pair[i]:
+					self.climbing[directions[i] + '_path'].append(next_coord)
+				self.climbing[directions[i] + '_directions'].append(next_direct[0])
+				curr_coord = next_coord
 
 	def flash_arrow(self, color, coord):
 		if color == 'red':
@@ -203,34 +186,41 @@ class Board(QtWidgets.QMainWindow):
 
 	def draw_top_path(self):
 		self.calc_random_paths()
-		button = self.grid.itemAtPosition(self.corner_pair[0][0], self.corner_pair[0][1])
-		button.widget().set_icon(os.path.join(config.CLIMB_ICON_DIR, 'mountain_top_no_climber.png'))
-		for i in range(len(self.top_path)):
-			button = self.grid.itemAtPosition(self.top_path[i][0], self.top_path[i][1])
-			icon_file = ''.join(d for d in self.top_direct[i:i+2]) + '.png'
-			button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, icon_file))
+		button = self.grid.itemAtPosition(
+					self.corner_pair[0][0], self.corner_pair[0][1])
+		button.widget().set_icon(os.path.join(
+					config.CLIMB_ICON_DIR, 'mountain_top_no_climber.png'))
+		for i in range(len(self.climbing['up_path'])):
+			button = self.grid.itemAtPosition(
+						self.climbing['up_path'][i][0], self.climbing['up_path'][i][1])
+			png = ''.join(d for d in self.climbing['up_directions'][i:i+2]) + '.png'
+			button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, png))
 		if self.corner_pair[0].count(1) == 2:
-			icon_file = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_left') + '.png'
+			png = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_left') + '.png'
 		else: 
-			icon_file = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_right') + '.png'
-		button = self.grid.itemAtPosition(self.coord['center'][0], self.coord['center'][1])
-		button.widget().set_icon(icon_file)
+			png = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_right') + '.png'
+		button = self.grid.itemAtPosition(
+					self.coord['center'][0], self.coord['center'][1])
+		button.widget().set_icon(png)
 		self.place_cursor_at_center()
 
 	def draw_bottom_path(self):
 		self.calc_random_paths()
 		button = self.grid.itemAtPosition(self.corner_pair[1][0], self.corner_pair[1][1])
-		button.widget().set_icon(os.path.join(config.CLIMB_ICON_DIR, 'house_camp_no_climber.png'))
-		for i in range(len(self.bottom_path)):
-			button = self.grid.itemAtPosition(self.bottom_path[i][0], self.bottom_path[i][1])
-			icon_file = ''.join(d for d in self.bottom_direct[i:i+2]) + '.png'
-			button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, icon_file))
+		button.widget().set_icon(os.path.join(
+					config.CLIMB_ICON_DIR, 'house_camp_no_climber.png'))
+		for i in range(len(self.climbing['down_path'])):
+			button = self.grid.itemAtPosition(
+						self.climbing['down_path'][i][0], self.climbing['down_path'][i][1])
+			png = ''.join(d for d in self.climbing['down_directions'][i:i+2]) + '.png'
+			button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, png))
 		if self.corner_pair[1].count(5) == 2: 
-			icon_file = os.path.join(config.CLIMB_ICON_DIR, 'climb_down_right') + '.png'
+			png = os.path.join(config.CLIMB_ICON_DIR, 'climb_down_right') + '.png'
 		else: 
-			icon_file = os.path.join(config.CLIMB_ICON_DIR, 'climb_down_left') + '.png'
-		button = self.grid.itemAtPosition(self.coord['center'][0], self.coord['center'][1])
-		button.widget().set_icon(icon_file)
+			png = os.path.join(config.CLIMB_ICON_DIR, 'climb_down_left') + '.png'
+		button = self.grid.itemAtPosition(
+					self.coord['center'][0], self.coord['center'][1])
+		button.widget().set_icon(png)
 		self.place_cursor_at_center()
 
 	def about(self):
@@ -325,9 +315,6 @@ class Board(QtWidgets.QMainWindow):
 
 		button.widget().setFocus()
 		button.widget().setStyleSheet(config.HOVER_FOCUS)
-		if config.DEGUB:
-			print(colored(list(self.move_tracker), 'red'), 
-						colored(list(self.click_tracker), 'green'))
 
 	def play(self, freq_factor):
 		self.wav.rewind()
