@@ -195,7 +195,7 @@ class Board(QtWidgets.QMainWindow):
 						self.climbing['up_path'][i][0], self.climbing['up_path'][i][1])
 			png = ''.join(d for d in self.climbing['up_directions'][i:i+2]) + '.png'
 			button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, png))
-		if self.corner_pair[0].count(1) == 2:
+		if self.corner_pair[0] == self.coord['corner_top_left']:
 			png = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_left') + '.png'
 		else: 
 			png = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_right') + '.png'
@@ -214,7 +214,7 @@ class Board(QtWidgets.QMainWindow):
 						self.climbing['down_path'][i][0], self.climbing['down_path'][i][1])
 			png = ''.join(d for d in self.climbing['down_directions'][i:i+2]) + '.png'
 			button.widget().set_icon(os.path.join(config.LINES_ICON_DIR, png))
-		if self.corner_pair[1].count(5) == 2: 
+		if self.corner_pair[1] == self.coord['corner_bottom_right']:
 			png = os.path.join(config.CLIMB_ICON_DIR, 'climb_down_right') + '.png'
 		else: 
 			png = os.path.join(config.CLIMB_ICON_DIR, 'climb_down_left') + '.png'
