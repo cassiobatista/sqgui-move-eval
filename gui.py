@@ -118,7 +118,7 @@ class Board(QtWidgets.QMainWindow):
 
 		# https://www.tutorialspoint.com/pyqt/pyqt_qstatusbar_widget.htm
 		self.status_bar = QtWidgets.QStatusBar()
-		self.status_bar.showMessage(u'TIP: press CTRL+T or CTRL+B to draw paths', 5000)
+		self.status_bar.showMessage(u'TIP: press CTRL+H for help', 5000)
 		self.setStatusBar(self.status_bar)
 
 		# create shortcuts for keyboard arrows
@@ -338,13 +338,13 @@ class Board(QtWidgets.QMainWindow):
 			sound.OUTBOUND.rewind()
 
 		self.curr_coord = (new_row, new_col)
-		# FIXME: out of bounts if path hasn't been defined yet
-		if self.curr_coord == self.climbing['up_path'][self.curr_index]:
-			self.curr_index += 1
-			print('acertou mano')
-		else:
-			self.num_errors += 1
-			print('errou mano')
+		if len(self.climbing['up_path']) > 0:
+			if self.curr_coord == self.climbing['up_path'][self.curr_index]:
+				self.curr_index += 1
+				print('acertou mano')
+			else:
+				self.num_errors += 1
+				print('errou mano')
 
 		if play_sound:
 			self.wav = sound.MOVE
