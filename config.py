@@ -46,7 +46,7 @@ WIN_MSG = \
 	u'Congratulations, you did it!'
 
 WINDOW_TITLE = \
-	u'Joguingo em Python 3!' if PT_BR else \
+	u'Joguinho em Python 3!' if PT_BR else \
 	u'Little Game in Python 3!'
 
 MOUSE_ERROR_MSG = \
@@ -54,25 +54,37 @@ MOUSE_ERROR_MSG = \
 	u'Please, do not use the mouse, use only the keyboard instead.'
 
 INFO = WINDOW_TITLE + '<br>' \
-		u'<br>' + \
-		(u'Autor(es):' if PT_BR else u'Author(s):') + \
-		u'<br>' + \
-		u'Cassio Trindade Batista' + \
-		u'<br><br>' + \
-		(u'Contato:' if PT_BR else u'Contact:') + \
-		u'<br>' + \
-		u'<a href=mailto:cassio.batista.13@gmail.com>cassio.batista.13@gmail.com</a>' + \
-		u'<br><br>' + \
-		u'Copyleft 2019' + \
-		u'<br>' + \
-		(u'Lab de Visualização, Interação e Sistemas Inteligentes' if PT_BR else \
-		u'Visualization, Interaction and Intelligent Systems Lab') + \
-		u'<br>' + \
-		(u'Instituto de Ciências Exatas e Naturais' if PT_BR else \
-		u'Institute of Exact and Natural Sciences') + \
-		u'<br>' + \
-		(u'Universidade Federal do Pará' if PT_BR else \
-		u'Federal University of Pará') + \
-		u'<br>' + \
-		(u'Belém, Brasil' if PT_BR else u'Belém, Brazil')
+	u'<br>' + \
+	(u'Autor(es):' if PT_BR else u'Author(s):') + \
+	u'<br>' + \
+	u'Cassio Trindade Batista' + \
+	u'<br><br>' + \
+	(u'Contato:' if PT_BR else u'Contact:') + \
+	u'<br>' + \
+	u'<a href=mailto:cassio.batista.13@gmail.com>cassio.batista.13@gmail.com</a>' + \
+	u'<br><br>' + \
+	u'Copyleft 2019' + \
+	u'<br>' + \
+	(u'Lab de Visualização, Interação e Sistemas Inteligentes' if PT_BR else \
+	u'Visualization, Interaction and Intelligent Systems Lab') + \
+	u'<br>' + \
+	(u'Instituto de Ciências Exatas e Naturais' if PT_BR else \
+	u'Institute of Exact and Natural Sciences') + \
+	u'<br>' + \
+	(u'Universidade Federal do Pará' if PT_BR else \
+	u'Federal University of Pará') + \
+	u'<br>' + \
+	(u'Belém, Brasil' if PT_BR else u'Belém, Brazil')
 
+HELP_MSG = WINDOW_TITLE  + '<br>' \
+	'<b>Ctrl+Q</b>: ' + (u'fechar' if PT_BR else u'close') + \
+	'<br>' + \
+	'<b>Ctrl+I</b>:  ' + (u'sobre' if PT_BR else u'about') + \
+	'<br>' + \
+	'<b>Ctrl+T</b>: ' + (u'desenhar caminho para escalada' if PT_BR else u'draw path to climb up') + \
+	'<br>' + \
+	'<b>Ctrl+B</b>: ' + (u'desenhar caminho para descida' if PT_BR else u'draw path to climb down') + \
+	'<br>' + \
+	'<b>Ctrl+R</b>: ' + (u'reset board' if PT_BR else u'restaurar interface') + \
+	'<br>' + \
+	'<b>Ctrl+P</b>: ' + (u'começar o jogo' if PT_BR else u'start game') 

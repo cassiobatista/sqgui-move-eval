@@ -128,9 +128,10 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Right), self, self.on_right)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+Q'),            self, self.close)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+I'),            self, self.about)
+		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+H'),            self, self.help)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+T'),            self, self.draw_top_path)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+B'),            self, self.draw_bottom_path)
-		# TODO create memthod start_game()
+		# TODO create method start_game()
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'),            self, self.reset_board)
 		##QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'),            self, self.start_game)
 
@@ -251,6 +252,10 @@ class Board(QtWidgets.QMainWindow):
 					self.coord['center'][0], self.coord['center'][1])
 		button.widget().set_icon(png)
 		self.place_cursor_at_center()
+
+	def help(self):
+		QtWidgets.QMessageBox.information(self, u'Help', config.HELP_MSG)
+		return
 
 	def about(self):
 		QtWidgets.QMessageBox.information(self, u'About', config.INFO)
