@@ -116,6 +116,11 @@ class Board(QtWidgets.QMainWindow):
 		# set cursor to the central element 
 		self.place_cursor_at_center()
 
+		# https://www.tutorialspoint.com/pyqt/pyqt_qstatusbar_widget.htm
+		self.status_bar = QtWidgets.QStatusBar()
+		self.status_bar.showMessage(u'TIP: press CTRL+T or CTRL+B to draw paths', 5000)
+		self.setStatusBar(self.status_bar)
+
 		# create shortcuts for keyboard arrows
 		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Up),    self, self.on_up)
 		QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Down),  self, self.on_down)
