@@ -16,8 +16,8 @@ LINES_ICON_DIR = os.path.join(RESOURCES_DIR, 'lines')
 CLIMB_ICON_DIR = os.path.join(RESOURCES_DIR, 'climber')
 
 BUTTON_SIZE = 100 # NOTE: pixels?
-ICON_SIZE   = 90 # NOTE: pixels?
-BOARD_DIM   = 5 
+ICON_SIZE   = 90  # NOTE: pixels?
+BOARD_DIM   = 5
 
 assert BUTTON_SIZE > 0, \
 			u'o tamanho do botão deve ser um valor positivo' if PT_BR else \
@@ -35,10 +35,22 @@ assert BOARD_DIM % 2 == 1, \
 			u'as dimensões devem ser ímpares, retardado' if PT_BR else \
 			u'board dimensions must be odd, dumbass'
 
-HOVER_FOCUS = \
-	'QPushButton::focus { '   + \
-	'    background: blue; ' + \
-	'    color: white; '      + \
+HOVER_FOCUS_DISABLED = \
+	'QPushButton::focus { '    + \
+	'    background: red; '    + \
+	'    color: white; '       + \
+	'}'
+
+HOVER_FOCUS_LOADED = \
+	'QPushButton::focus { '    + \
+	'    background: yellow; ' + \
+	'    color: white; '       + \
+	'}'
+
+HOVER_FOCUS_PLAY = \
+	'QPushButton::focus { '    + \
+	'    background: green; '  + \
+	'    color: white; '       + \
 	'}'
 
 WIN_MSG = \
@@ -77,14 +89,19 @@ INFO = WINDOW_TITLE + '<br>' \
 	(u'Belém, Brasil' if PT_BR else u'Belém, Brazil')
 
 HELP_MSG = WINDOW_TITLE  + '<br>' \
-	'<b>Ctrl+Q</b>: ' + (u'fechar' if PT_BR else u'close') + \
 	'<br>' + \
-	'<b>Ctrl+I</b>:  ' + (u'sobre' if PT_BR else u'about') + \
+	'<b>Ctrl+L</b>:  ' + (u'calcular caminhos' if PT_BR else u'load paths') + \
 	'<br>' + \
-	'<b>Ctrl+T</b>: ' + (u'desenhar caminho para escalada' if PT_BR else u'draw path to climb up') + \
+	'<b>Ctrl+1</b>: ' + (u'desenhar caminho para escalada' if PT_BR else u'draw path to climb up') + \
 	'<br>' + \
-	'<b>Ctrl+B</b>: ' + (u'desenhar caminho para descida' if PT_BR else u'draw path to climb down') + \
+	'<b>Ctrl+2</b>: ' + (u'desenhar caminho para descida' if PT_BR else u'draw path to climb down') + \
 	'<br>' + \
 	'<b>Ctrl+R</b>: ' + (u'reset board' if PT_BR else u'restaurar interface') + \
 	'<br>' + \
-	'<b>Ctrl+P</b>: ' + (u'começar o jogo' if PT_BR else u'start game') 
+	'<b>Ctrl+P</b>: ' + (u'começar o jogo' if PT_BR else u'start game') + \
+	'<br>' + \
+	'<b>Ctrl+Q</b>: ' + (u'fechar interface' if PT_BR else u'close gui') + \
+	'<br>' + \
+	'<b>Ctrl+I</b>:  ' + (u'sobre a aplicação' if PT_BR else u'about app') + \
+	'<br>' + \
+	'<b>Ctrl+H</b>:  ' + (u'mostrar mensagem de ajuda' if PT_BR else u'show help message')

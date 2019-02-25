@@ -39,6 +39,8 @@ class Card(QtWidgets.QPushButton):
 class Board(QtWidgets.QMainWindow):
 	def __init__(self):
 		super(Board, self).__init__()
+		self.is_path_set = False
+		self.curr_part = 0
 		self.coord = {
 			'center'     :((config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)//2),
 			'arrow_up'   :(0,                       (config.BOARD_DIM+1)//2),
@@ -74,11 +76,11 @@ class Board(QtWidgets.QMainWindow):
 		self.draw_borders()
 		self.set_ui_elements()
 
-	def place_cursor_at_center(self):
+	def place_cursor_at_center(self, focus):
 		self.grid.itemAtPosition(self.coord['center'][0],
 					self.coord['center'][1]).widget().setFocus()
 		self.grid.itemAtPosition(self.coord['center'][0],
-					self.coord['center'][1]).widget().setStyleSheet(config.HOVER_FOCUS)
+					self.coord['center'][1]).widget().setStyleSheet(focus)
 
 	def draw_borders(self):
 		for i in range(config.BOARD_DIM+2):
@@ -106,6 +108,7 @@ class Board(QtWidgets.QMainWindow):
 			for j in range(1, config.BOARD_DIM+1):
 				card = Card()
 				card.set_icon(blank_icon_path)
+				card.setEnabled(False)
 				self.grid.addWidget(card, i, j)
 
 	def set_ui_elements(self):
@@ -114,7 +117,7 @@ class Board(QtWidgets.QMainWindow):
 		self.setCentralWidget(wg_central)
 
 		# set cursor to the central element 
-		self.place_cursor_at_center()
+		self.place_cursor_at_center(config.HOVER_FOCUS_DISABLED)
 
 		# https://www.tutorialspoint.com/pyqt/pyqt_qstatusbar_widget.htm
 		self.status_bar = QtWidgets.QStatusBar()
@@ -129,11 +132,11 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+Q'),            self, self.close)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+I'),            self, self.about)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+H'),            self, self.help)
-		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+T'),            self, self.draw_top_path)
-		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+B'),            self, self.draw_bottom_path)
-		# TODO create method start_game()
+		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+L'),            self, self.calc_random_paths)
+		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+1'),            self, self.draw_top_path)
+		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+2'),            self, self.draw_bottom_path)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'),            self, self.reset_board)
-		##QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'),            self, self.start_game)
+		#QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'),            self, self.start_game) # TODO
 
 	def reset_board(self):
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
@@ -141,6 +144,7 @@ class Board(QtWidgets.QMainWindow):
 			for j in range(1, config.BOARD_DIM+1):
 				button = self.grid.itemAtPosition(i, j)
 				button.widget().set_icon(blank_icon_path)
+				button.widget().setEnabled(False)
 
 		self.num_moves  = 0
 		self.num_errors = 0
@@ -156,17 +160,26 @@ class Board(QtWidgets.QMainWindow):
 		}
 
 		self.corner_pair     = ()
+		self.is_path_set = False
 
-	def calc_random_paths(self): # FIXME
+	def set_board(self):
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
 		for i in range(1, config.BOARD_DIM+1):
 			for j in range(1, config.BOARD_DIM+1):
 				if (i,j) != self.coord['center']:
 					button = self.grid.itemAtPosition(i, j)
 					button.widget().set_icon(blank_icon_path)
+					button.widget().setEnabled(True)
+		button = self.grid.itemAtPosition(
+					self.coord['center'][0], self.coord['center'][1])
+		button.widget().setEnabled(True)
+		self.is_path_set = True
 
+	def calc_random_paths(self): # FIXME
+		self.reset_board()
+		self.set_board()
 		if np.random.choice((0,1)):
-			self.corner_pair     = (self.coord['corner_top_right'], self.coord['corner_bottom_left'])
+			self.corner_pair      = (self.coord['corner_top_right'], self.coord['corner_bottom_left'])
 			self.path_orientation = (('up','right'), ('down','left'))
 		else:
 			self.corner_pair     = (self.coord['corner_top_left'], self.coord['corner_bottom_right'])
@@ -204,6 +217,7 @@ class Board(QtWidgets.QMainWindow):
 					self.climbing[directions[i] + '_path'].append(next_coord)
 				self.climbing[directions[i] + '_directions'].append(next_direct[0])
 				curr_coord = next_coord
+		self.draw_top_path()
 
 	def flash_arrow(self, color, coord):
 		if color == 'red':
@@ -214,7 +228,9 @@ class Board(QtWidgets.QMainWindow):
 			pass
 
 	def draw_top_path(self):
-		self.calc_random_paths()
+		if not self.is_path_set:
+			return
+		self.set_board()
 		button = self.grid.itemAtPosition(
 					self.corner_pair[0][0], self.corner_pair[0][1])
 		button.widget().set_icon(os.path.join(
@@ -231,11 +247,12 @@ class Board(QtWidgets.QMainWindow):
 		button = self.grid.itemAtPosition(
 					self.coord['center'][0], self.coord['center'][1])
 		button.widget().set_icon(png)
-		print(self.climbing['up_path'])
-		self.place_cursor_at_center()
+		self.place_cursor_at_center(config.HOVER_FOCUS_LOADED)
 
 	def draw_bottom_path(self):
-		self.calc_random_paths()
+		if not self.is_path_set:
+			return
+		self.set_board()
 		button = self.grid.itemAtPosition(self.corner_pair[1][0], self.corner_pair[1][1])
 		button.widget().set_icon(os.path.join(
 					config.CLIMB_ICON_DIR, 'house_camp_no_climber.png'))
@@ -251,7 +268,7 @@ class Board(QtWidgets.QMainWindow):
 		button = self.grid.itemAtPosition(
 					self.coord['center'][0], self.coord['center'][1])
 		button.widget().set_icon(png)
-		self.place_cursor_at_center()
+		self.place_cursor_at_center(config.HOVER_FOCUS_LOADED)
 
 	def help(self):
 		QtWidgets.QMessageBox.information(self, u'Help', config.HELP_MSG)
@@ -301,7 +318,7 @@ class Board(QtWidgets.QMainWindow):
 
 	def on_right(self):
 		self.num_moves += 1
-		self.curr_move = 'left'
+		self.curr_move = 'right'
 		self.move_focus(+1, 0)
 
 	def move_focus(self, dx, dy):
@@ -317,7 +334,6 @@ class Board(QtWidgets.QMainWindow):
 		new_col = c + dx
 
 		play_sound = True
-
 		if new_row   > config.BOARD_DIM:
 			new_row  = config.BOARD_DIM  # limit the right edge
 			play_sound = False
@@ -338,7 +354,9 @@ class Board(QtWidgets.QMainWindow):
 			sound.OUTBOUND.rewind()
 
 		self.curr_coord = (new_row, new_col)
-		if len(self.climbing['up_path']) > 0:
+		if self.is_path_set:
+			if self.curr_coord == self.corner_pair[0]:
+				self.win()
 			if self.curr_coord == self.climbing['up_path'][self.curr_index]:
 				self.curr_index += 1
 				print('acertou mano')
@@ -357,7 +375,7 @@ class Board(QtWidgets.QMainWindow):
 			return
 
 		button.widget().setFocus()
-		button.widget().setStyleSheet(config.HOVER_FOCUS)
+		button.widget().setStyleSheet(config.HOVER_FOCUS_DISABLED)
 
 	def play(self, freq_factor):
 		self.wav.rewind()
