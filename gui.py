@@ -18,6 +18,11 @@ from termcolor import colored
 import config
 import sound
 
+class Blink(QtCore.QThread):
+	signal = QtCore.pyqtSignal('PyQt_PyObject')
+	def __init__(self):
+		super(Blink, self).__init__()
+
 class Card(QtWidgets.QPushButton):
 	def __init__(self, blank_icon_path=None):
 		super(Card, self).__init__()
@@ -40,7 +45,6 @@ class Board(QtWidgets.QMainWindow):
 	def __init__(self):
 		super(Board, self).__init__()
 		self.is_path_set = False
-		self.curr_part = 0
 		self.coord = {
 			'center'     :((config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)//2),
 			'arrow_up'   :(0,                       (config.BOARD_DIM+1)//2),
@@ -54,9 +58,18 @@ class Board(QtWidgets.QMainWindow):
 			'corner_bottom_right':(config.BOARD_DIM, config.BOARD_DIM),
 		}
 
-		self.num_moves  = 0
-		self.num_errors = 0
-		self.curr_move  = None
+		self.currs = {
+			'part' :0,    # 0:up, 1:down
+			'move' :None,
+			'coord':self.coord['center'],
+			'index':None,
+		}
+
+		self.counters = {
+			'moves' :0,
+			'errors':0,
+		}
+
 		self.curr_coord = self.coord['center']
 		self.curr_index = 0
 
@@ -136,7 +149,12 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+1'),            self, self.draw_top_path)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+2'),            self, self.draw_bottom_path)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'),            self, self.reset_board)
-		#QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'),            self, self.start_game) # TODO
+		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'),            self, self.start_game) 
+
+	# TODO
+	def start_game(self, curr_half='up'):
+		if curr_half == 'up':
+			self.draw_top_path()
 
 	def reset_board(self):
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
@@ -146,9 +164,8 @@ class Board(QtWidgets.QMainWindow):
 				button.widget().set_icon(blank_icon_path)
 				button.widget().setEnabled(False)
 
-		self.num_moves  = 0
-		self.num_errors = 0
-		self.curr_move  = None
+		self.counters['moves']  = 0
+		self.counters['errors'] = 0
 		self.curr_coord = self.coord['center']
 		self.curr_index = 0
 
@@ -302,23 +319,23 @@ class Board(QtWidgets.QMainWindow):
 		self.close()
 
 	def on_up(self):
-		self.num_moves += 1
-		self.curr_move = 'up'
+		self.counters['moves'] += 1
+		self.currs['move'] = 'up'
 		self.move_focus(0, -1)
 
 	def on_down(self):
-		self.num_moves += 1
-		self.curr_move = 'down'
+		self.counters['moves'] += 1
+		self.currs['move'] = 'down'
 		self.move_focus(0, +1)
 
 	def on_left(self):
-		self.num_moves += 1
-		self.curr_move = 'left'
+		self.counters['moves'] += 1
+		self.currs['move'] = 'left'
 		self.move_focus(-1, 0)
 
 	def on_right(self):
-		self.num_moves += 1
-		self.curr_move = 'right'
+		self.counters['moves'] += 1
+		self.currs['move'] = 'right'
 		self.move_focus(+1, 0)
 
 	def move_focus(self, dx, dy):
@@ -353,15 +370,15 @@ class Board(QtWidgets.QMainWindow):
 			sound.MOVE.rewind()
 			sound.OUTBOUND.rewind()
 
-		self.curr_coord = (new_row, new_col)
+		self.currs['coord'] = (new_row, new_col)
 		if self.is_path_set:
-			if self.curr_coord == self.corner_pair[0]:
+			if self.currs['coord'] == self.corner_pair[0]:
 				self.win()
-			if self.curr_coord == self.climbing['up_path'][self.curr_index]:
+			if self.currs['coord'] == self.climbing['up_path'][self.curr_index]:
 				self.curr_index += 1
 				print('acertou mano')
 			else:
-				self.num_errors += 1
+				self.counters['errors'] += 1
 				print('errou mano')
 
 		if play_sound:
