@@ -101,7 +101,7 @@ class Board(QtWidgets.QMainWindow):
 				for karrow in self.coord:
 					if 'arrow' in karrow:
 						arrow_icon_path = os.path.join(
-									config.ARROW_ICON_DIR, karrow + '_black.png')
+									config.ARROW_ICON_DIR, karrow+ '_trans.png')
 						card = Card()
 						card.set_icon(arrow_icon_path)
 						self.grid.addWidget(card,
