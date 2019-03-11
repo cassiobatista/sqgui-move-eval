@@ -30,14 +30,17 @@ class LightWidget(QtWidgets.QPushButton):
 	@QtCore.pyqtSlot()
 	def turnOn(self):
 		self.setOn(True)
+		if self.colour is not None:
+			self.setFocus()
+			self.setStyleSheet('QPushButton::focus { background: %s; color: white; }' % self.colour)
 
-	def paintEvent(self, e):
-		if not self.onVal:
-			return
-		painter = QtGui.QPainter(self)
-		painter.setRenderHint(QtGui.QPainter.Antialiasing)
-		painter.setBrush(self.colour)
-		painter.drawEllipse(0, 0, self.width(), self.height())
+	#def paintEvent(self, e):
+	#	if not self.onVal:
+	#		return
+	#	painter = QtGui.QPainter(self)
+	#	painter.setRenderHint(QtGui.QPainter.Antialiasing)
+	#	painter.setBrush(self.colour)
+	#	painter.drawEllipse(0, 0, self.width(), self.height())
 
 	on = QtCore.pyqtProperty(bool, isOn, setOn)
 
@@ -45,10 +48,10 @@ class TrafficLight(QtWidgets.QWidget):
 	def __init__(self):
 		super(TrafficLight, self).__init__()
 
-		self.trans  = LightWidget(QtCore.Qt.transparent)
-		self.red    = LightWidget(QtCore.Qt.red)
-		self.yellow = LightWidget(QtCore.Qt.yellow)
-		self.green  = LightWidget(QtCore.Qt.green)
+		self.trans  = LightWidget(None) #QtCore.Qt.transparent)
+		self.red    = LightWidget('red') #QtCore.Qt.red)
+		self.yellow = LightWidget('yellow') #QtCore.Qt.yellow)
+		self.green  = LightWidget('green') #QtCore.Qt.green)
 
 		self.hbox = QtWidgets.QHBoxLayout()
 		self.hbox.addWidget(self.trans)
