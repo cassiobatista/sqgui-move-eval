@@ -7,11 +7,12 @@
 import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 
-class LightWidget(QtWidgets.QWidget):
+class LightWidget(QtWidgets.QPushButton):
 	def __init__(self, colour):
 		super(LightWidget, self).__init__()
 		self.colour = colour
 		self.onVal  = False
+		self.setFixedSize(150,150)
 
 	def isOn(self):
 		return self.onVal
@@ -40,81 +41,74 @@ class LightWidget(QtWidgets.QWidget):
 
 	on = QtCore.pyqtProperty(bool, isOn, setOn)
 
-class TrafficLightWidget(QtWidgets.QWidget):
-	def __init__(self):
-		super(TrafficLightWidget, self).__init__()
-		self.redLight    = LightWidget(QtCore.Qt.red)
-		self.yellowLight = LightWidget(QtCore.Qt.yellow)
-		self.greenLight  = LightWidget(QtCore.Qt.green)
-
-		vbox = QtWidgets.QVBoxLayout(self)
-		vbox.addWidget(self.redLight)
-		vbox.addWidget(self.yellowLight)
-		vbox.addWidget(self.greenLight)
-
-		pal = QtGui.QPalette()
-		pal.setColor(QtGui.QPalette.Background, QtCore.Qt.black)
-		self.setPalette(pal)
-		self.setAutoFillBackground(True)
-
-def createLightState(light, duration, parent=None):
-	lightState = QtCore.QState(parent)
-
-	timer = QtCore.QTimer(lightState)
-	timer.setInterval(duration)
-	timer.setSingleShot(True)
-
-	timing = QtCore.QState(lightState)
-	timing.entered.connect(light.turnOn)
-	timing.entered.connect(timer.start)
-	timing.exited.connect(light.turnOff)
-
-	done = QtCore.QFinalState(lightState)
-
-	# ref.: https://github.com/pyqt/examples/blob/master/animation/moveblocks.py
-	timing.addTransition(timer.timeout, done)
-
-	lightState.setInitialState(timing)
-	return lightState
-
 class TrafficLight(QtWidgets.QWidget):
 	def __init__(self):
 		super(TrafficLight, self).__init__()
+
+		self.trans  = LightWidget(QtCore.Qt.transparent)
+		self.red    = LightWidget(QtCore.Qt.red)
+		self.yellow = LightWidget(QtCore.Qt.yellow)
+		self.green  = LightWidget(QtCore.Qt.green)
+
+		self.hbox = QtWidgets.QHBoxLayout()
+		self.hbox.addWidget(self.trans)
+		self.hbox.addWidget(self.red)
+		self.hbox.addWidget(self.yellow)
+		self.hbox.addWidget(self.green)
+
 		vbox = QtWidgets.QVBoxLayout(self)
-		widget = TrafficLightWidget()
-		vbox.addWidget(widget)
+		vbox.addLayout(self.hbox)
 		vbox.setContentsMargins(0, 0, 0, 0)
 
-		machine = QtCore.QStateMachine(self)
+		t2r = self.createLightState(self.trans,  500)
+		r2y = self.createLightState(self.red,    500)
+		y2g = self.createLightState(self.yellow, 500)
+		g2t = self.createLightState(self.green,  500)
 
-		redGoingYellow   = createLightState(widget.yellowLight, 1000)
-		yellowGoingGreen = createLightState(widget.redLight,    1000)
-		greenGoingYellow = createLightState(widget.yellowLight, 1000)
-		yellowGoingRed   = createLightState(widget.greenLight,  1000)
-
-		redGoingYellow.setObjectName('redGoingYellow')
-		yellowGoingGreen.setObjectName('redGoingYellow')
-		greenGoingYellow.setObjectName('redGoingYellow')
-		yellowGoingRed.setObjectName('redGoingYellow')
+		t2r.setObjectName('t2r')
+		r2y.setObjectName('r2y')
+		y2g.setObjectName('y2g')
+		g2t.setObjectName('g2t')
 
 		# ref.: https://github.com/pyqt/examples/blob/master/animation/moveblocks.py
-		redGoingYellow.addTransition  (redGoingYellow.finished, yellowGoingGreen)
-		yellowGoingGreen.addTransition(yellowGoingGreen.finished, greenGoingYellow)
-		greenGoingYellow.addTransition(greenGoingYellow.finished, yellowGoingRed)
-		yellowGoingRed.addTransition  (yellowGoingRed.finished, redGoingYellow)
+		t2r.addTransition(t2r.finished, r2y)
+		r2y.addTransition(r2y.finished, y2g)
+		y2g.addTransition(y2g.finished, g2t)
+		g2t.addTransition(g2t.finished, t2r)
 
-		machine.addState(redGoingYellow)
-		machine.addState(yellowGoingGreen)
-		machine.addState(greenGoingYellow)
-		machine.addState(yellowGoingRed)
-		machine.setInitialState(redGoingYellow)
-
+		machine = QtCore.QStateMachine(self)
+		machine.addState(t2r)
+		machine.addState(r2y)
+		machine.addState(y2g)
+		machine.addState(g2t)
+		machine.setInitialState(t2r)
 		machine.start()
+
+	def createLightState(self, light, duration, parent=None):
+		lightState = QtCore.QState(parent)
+	
+		timer = QtCore.QTimer(lightState)
+		timer.setInterval(duration)
+		timer.setSingleShot(True)
+	
+		timing = QtCore.QState(lightState)
+		timing.entered.connect(light.turnOn)
+		timing.entered.connect(timer.start)
+		timing.exited.connect(light.turnOff)
+	
+		done = QtCore.QFinalState(lightState)
+	
+		# ref.: https://github.com/pyqt/examples/blob/master/animation/moveblocks.py
+		timing.addTransition(timer.timeout, done)
+	
+		lightState.setInitialState(timing)
+		return lightState
+
 
 if __name__ == '__main__':
 	app = QtWidgets.QApplication(sys.argv)
 	widget = TrafficLight()
-	widget.resize(110, 300)
+	#widget.resize(110, 300)
 	widget.move(510, 400)
 	widget.show()
 	sys.exit(app.exec_())
