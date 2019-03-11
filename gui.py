@@ -23,6 +23,10 @@ class Blink(QtCore.QThread):
 	def __init__(self):
 		super(Blink, self).__init__()
 
+class Arrow(QtWidgets.QPushButton):
+	def __init__(self):
+		super(Arrow, self).__init__()
+
 class Card(QtWidgets.QPushButton):
 	def __init__(self, blank_icon_path=None):
 		super(Card, self).__init__()
@@ -70,9 +74,6 @@ class Board(QtWidgets.QMainWindow):
 			'errors':0,
 		}
 
-		self.curr_coord = self.coord['center']
-		self.curr_index = 0
-
 		self.climbing = {
 			'up_path'  :[],
 			'down_path':[],
@@ -101,7 +102,7 @@ class Board(QtWidgets.QMainWindow):
 				for karrow in self.coord:
 					if 'arrow' in karrow:
 						arrow_icon_path = os.path.join(
-									config.ARROW_ICON_DIR, karrow+ '_trans.png')
+									config.ARROW_ICON_DIR, karrow + '_trans.png')
 						card = Card()
 						card.set_icon(arrow_icon_path)
 						self.grid.addWidget(card,
@@ -166,8 +167,8 @@ class Board(QtWidgets.QMainWindow):
 
 		self.counters['moves']  = 0
 		self.counters['errors'] = 0
-		self.curr_coord = self.coord['center']
-		self.curr_index = 0
+		self.currs['coord'] = self.coord['center']
+		self.currs['index'] = 0
 
 		self.climbing = {
 			'up_path'  :[],
@@ -235,14 +236,6 @@ class Board(QtWidgets.QMainWindow):
 				self.climbing[directions[i] + '_directions'].append(next_direct[0])
 				curr_coord = next_coord
 		self.draw_top_path()
-
-	def flash_arrow(self, color, coord):
-		if color == 'red':
-			pass
-		elif color == 'yellow':
-			pass
-		elif color == 'green':
-			pass
 
 	def draw_top_path(self):
 		if not self.is_path_set:
@@ -374,8 +367,8 @@ class Board(QtWidgets.QMainWindow):
 		if self.is_path_set:
 			if self.currs['coord'] == self.corner_pair[0]:
 				self.win()
-			if self.currs['coord'] == self.climbing['up_path'][self.curr_index]:
-				self.curr_index += 1
+			if self.currs['coord'] == self.climbing['up_path'][self.currs['index']]:
+				self.currs['index'] += 1
 				print('acertou mano')
 			else:
 				self.counters['errors'] += 1
