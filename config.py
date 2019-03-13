@@ -47,9 +47,9 @@ HOVER_FOCUS_LOADED = \
 	'    color: white; '       + \
 	'}'
 
-HOVER_FOCUS_PLAY = \
+HOVER_FOCUS_BG_COLOUR = \
 	'QPushButton::focus { '    + \
-	'    background: green; '  + \
+	'    background: %s; '     + \
 	'    color: white; '       + \
 	'}'
 
