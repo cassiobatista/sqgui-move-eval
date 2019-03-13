@@ -7,9 +7,9 @@
 import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 
-class LightWidget(QtWidgets.QPushButton):
+class LightButton(QtWidgets.QPushButton):
 	def __init__(self):
-		super(LightWidget, self).__init__()
+		super(LightButton, self).__init__()
 		self.onVal = False
 		self.order = ['red', 'yellow', 'green']
 		self.setFixedSize(150,150)
@@ -63,15 +63,15 @@ class TrafficLight(QtWidgets.QWidget):
 		super(TrafficLight, self).__init__()
 
 		# ref.: https://github.com/pyqt/examples/blob/master/animation/moveblocks.py
-		trans = LightWidget()
+		button = LightButton()
 
 		hbox = QtWidgets.QHBoxLayout()
-		hbox.addWidget(trans)
+		hbox.addWidget(button)
 		vbox = QtWidgets.QVBoxLayout(self)
 		vbox.addLayout(hbox)
 		vbox.setContentsMargins(0, 0, 0, 0)
 
-		state   = LightState(trans)
+		state   = LightState(button)
 		machine = QtCore.QStateMachine(self)
 		machine.addState(state)
 		machine.setInitialState(state)
