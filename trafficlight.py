@@ -8,10 +8,10 @@ import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 
 class LightWidget(QtWidgets.QPushButton):
-	def __init__(self, colour):
+	def __init__(self):
 		super(LightWidget, self).__init__()
-		self.colour = colour
 		self.onVal  = False
+		self.order  = ['red', 'yellow', 'green']
 		self.setFixedSize(150,150)
 
 	def isOn(self):
@@ -25,22 +25,16 @@ class LightWidget(QtWidgets.QPushButton):
 
 	@QtCore.pyqtSlot()
 	def turnOff(self):
-		self.setOn(False)
+		if not len(self.order):
+			self.setOn(False)
 
 	@QtCore.pyqtSlot()
 	def turnOn(self):
+		if len(self.order):
+			self.colour = self.order.pop(0)
 		self.setOn(True)
-		if self.colour is not None:
-			self.setFocus()
-			self.setStyleSheet('QPushButton::focus { background: %s; color: white; }' % self.colour)
-
-	#def paintEvent(self, e):
-	#	if not self.onVal:
-	#		return
-	#	painter = QtGui.QPainter(self)
-	#	painter.setRenderHint(QtGui.QPainter.Antialiasing)
-	#	painter.setBrush(self.colour)
-	#	painter.drawEllipse(0, 0, self.width(), self.height())
+		self.setFocus()
+		self.setStyleSheet('QPushButton::focus { background: %s; color: white; }' % self.colour)
 
 	on = QtCore.pyqtProperty(bool, isOn, setOn)
 
@@ -48,47 +42,26 @@ class TrafficLight(QtWidgets.QWidget):
 	def __init__(self):
 		super(TrafficLight, self).__init__()
 
-		self.trans  = LightWidget(None) #QtCore.Qt.transparent)
-		self.red    = LightWidget('red') #QtCore.Qt.red)
-		self.yellow = LightWidget('yellow') #QtCore.Qt.yellow)
-		self.green  = LightWidget('green') #QtCore.Qt.green)
+		# ref.: https://github.com/pyqt/examples/blob/master/animation/moveblocks.py
+		self.trans = LightWidget()
+		t2t = self.createLightState(self.trans, 1000)
+		t2t.setObjectName('t2t')
+		t2t.addTransition(t2t.finished, t2t)
 
-		self.hbox = QtWidgets.QHBoxLayout()
-		self.hbox.addWidget(self.trans)
-		self.hbox.addWidget(self.red)
-		self.hbox.addWidget(self.yellow)
-		self.hbox.addWidget(self.green)
+		hbox = QtWidgets.QHBoxLayout()
+		hbox.addWidget(self.trans)
 
 		vbox = QtWidgets.QVBoxLayout(self)
-		vbox.addLayout(self.hbox)
+		vbox.addLayout(hbox)
 		vbox.setContentsMargins(0, 0, 0, 0)
 
-		t2r = self.createLightState(self.trans,  500)
-		r2y = self.createLightState(self.red,    500)
-		y2g = self.createLightState(self.yellow, 500)
-		g2t = self.createLightState(self.green,  500)
-
-		t2r.setObjectName('t2r')
-		r2y.setObjectName('r2y')
-		y2g.setObjectName('y2g')
-		g2t.setObjectName('g2t')
-
-		# ref.: https://github.com/pyqt/examples/blob/master/animation/moveblocks.py
-		t2r.addTransition(t2r.finished, r2y)
-		r2y.addTransition(r2y.finished, y2g)
-		y2g.addTransition(y2g.finished, g2t)
-		g2t.addTransition(g2t.finished, t2r)
-
 		machine = QtCore.QStateMachine(self)
-		machine.addState(t2r)
-		machine.addState(r2y)
-		machine.addState(y2g)
-		machine.addState(g2t)
-		machine.setInitialState(t2r)
+		machine.addState(t2t)
+		machine.setInitialState(t2t)
 		machine.start()
 
-	def createLightState(self, light, duration, parent=None):
-		lightState = QtCore.QState(parent)
+	def createLightState(self, light, duration):
+		lightState = QtCore.QState(None)
 	
 		timer = QtCore.QTimer(lightState)
 		timer.setInterval(duration)
@@ -111,7 +84,6 @@ class TrafficLight(QtWidgets.QWidget):
 if __name__ == '__main__':
 	app = QtWidgets.QApplication(sys.argv)
 	widget = TrafficLight()
-	#widget.resize(110, 300)
 	widget.move(510, 400)
 	widget.show()
 	sys.exit(app.exec_())
