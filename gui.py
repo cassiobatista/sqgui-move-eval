@@ -18,20 +18,9 @@ from termcolor import colored
 import config
 import sound
 
-class Blink(QtCore.QThread):
-	signal = QtCore.pyqtSignal('PyQt_PyObject')
-	def __init__(self):
-		super(Blink, self).__init__()
-
-class Arrow(QtWidgets.QPushButton):
-	def __init__(self):
-		super(Arrow, self).__init__()
-
 class Card(QtWidgets.QPushButton):
 	def __init__(self, blank_icon_path=None):
 		super(Card, self).__init__()
-
-		# define QPushButton properties
 		self.setFixedSize(config.BUTTON_SIZE,config.BUTTON_SIZE)
 		self.setDefault(True)
 		self.setAutoDefault(False)
@@ -44,6 +33,35 @@ class Card(QtWidgets.QPushButton):
 		self.icon = QtGui.QIcon(QtGui.QPixmap(icon_path))
 		self.setIcon(self.icon)
 		self.setIconSize(QtCore.QSize(config.ICON_SIZE,config.ICON_SIZE))
+
+class Arrow(Card):
+	def __init__(self):
+		super(Arrow, self).__init__()
+		self.onVal = False
+		self.order = ['red', 'yellow', 'green']
+
+	def isOn(self):
+		return self.onVal
+
+	def setOn(self, on):
+		if self.onVal == on:
+			return
+		self.onVal = on
+		self.update()
+
+	@QtCore.pyqtSlot()
+	def turnOff(self): # FIXME if
+		self.setOn(False)
+
+	@QtCore.pyqtSlot()
+	def turnOn(self):
+		if len(self.order):
+			self.colour = self.order.pop(0)
+		self.setOn(True)
+		self.setFocus()
+		self.setStyleSheet('QPushButton::focus { background: %s; color: white; }' % self.colour)
+
+	on = QtCore.pyqtProperty(bool, isOn, setOn)
 
 class Board(QtWidgets.QMainWindow):
 	def __init__(self):
@@ -87,7 +105,7 @@ class Board(QtWidgets.QMainWindow):
 		self.grid   = None
 
 		self.draw_board()
-		self.draw_borders()
+		self.draw_arrows()
 		self.set_ui_elements()
 
 	def place_cursor_at_center(self, focus):
@@ -96,16 +114,16 @@ class Board(QtWidgets.QMainWindow):
 		self.grid.itemAtPosition(self.coord['center'][0],
 					self.coord['center'][1]).widget().setStyleSheet(focus)
 
-	def draw_borders(self):
+	def draw_arrows(self):
 		for i in range(config.BOARD_DIM+2):
 			if i == (config.BOARD_DIM+1) // 2:
 				for karrow in self.coord:
 					if 'arrow' in karrow:
 						arrow_icon_path = os.path.join(
 									config.ARROW_ICON_DIR, karrow + '_trans.png')
-						card = Card()
-						card.set_icon(arrow_icon_path)
-						self.grid.addWidget(card,
+						arrow = Arrow()
+						arrow.set_icon(arrow_icon_path)
+						self.grid.addWidget(arrow,
 									self.coord[karrow][0], self.coord[karrow][1])
 			else:
 				card = Card()
@@ -193,7 +211,7 @@ class Board(QtWidgets.QMainWindow):
 		button.widget().setEnabled(True)
 		self.is_path_set = True
 
-	def calc_random_paths(self): # FIXME
+	def calc_random_paths(self):
 		self.reset_board()
 		self.set_board()
 		if np.random.choice((0,1)):
