@@ -10,8 +10,8 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 class LightWidget(QtWidgets.QPushButton):
 	def __init__(self):
 		super(LightWidget, self).__init__()
-		self.onVal  = False
-		self.order  = ['red', 'yellow', 'green']
+		self.onVal = False
+		self.order = ['red', 'yellow', 'green']
 		self.setFixedSize(150,150)
 
 	def isOn(self):
@@ -25,8 +25,7 @@ class LightWidget(QtWidgets.QPushButton):
 
 	@QtCore.pyqtSlot()
 	def turnOff(self):
-		if not len(self.order):
-			self.setOn(False)
+		self.setOn(False)
 
 	@QtCore.pyqtSlot()
 	def turnOn(self):
@@ -44,7 +43,7 @@ class TrafficLight(QtWidgets.QWidget):
 
 		# ref.: https://github.com/pyqt/examples/blob/master/animation/moveblocks.py
 		self.trans = LightWidget()
-		t2t = self.createLightState(self.trans, 1000)
+		t2t = self.createLightState(self.trans)
 		t2t.setObjectName('t2t')
 		t2t.addTransition(t2t.finished, t2t)
 
@@ -60,11 +59,11 @@ class TrafficLight(QtWidgets.QWidget):
 		machine.setInitialState(t2t)
 		machine.start()
 
-	def createLightState(self, light, duration):
-		lightState = QtCore.QState(None)
+	def createLightState(self, light):
+		lightState = QtCore.QState(None) # parent
 	
 		timer = QtCore.QTimer(lightState)
-		timer.setInterval(duration)
+		timer.setInterval(1000) # duration
 		timer.setSingleShot(True)
 	
 		timing = QtCore.QState(lightState)
