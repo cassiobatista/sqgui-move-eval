@@ -37,48 +37,45 @@ class LightWidget(QtWidgets.QPushButton):
 
 	on = QtCore.pyqtProperty(bool, isOn, setOn)
 
+class LightState(QtCore.QState):
+	def __init__(self, light):
+		super(LightState, self).__init__()
+		timer = QtCore.QTimer(self)
+		timer.setInterval(1000) # duration
+		timer.setSingleShot(True)
+
+		timing = QtCore.QState(self)
+		timing.entered.connect(light.turnOn)
+		timing.entered.connect(timer.start)
+		timing.exited.connect(light.turnOff)
+	
+		done = QtCore.QFinalState(self)
+
+		# ref.: https://github.com/pyqt/examples/blob/master/animation/moveblocks.py
+		timing.addTransition(timer.timeout, done)
+	
+		self.setInitialState(timing)
+		self.setObjectName('state')
+		self.addTransition(self.finished, self)
+
 class TrafficLight(QtWidgets.QWidget):
 	def __init__(self):
 		super(TrafficLight, self).__init__()
 
 		# ref.: https://github.com/pyqt/examples/blob/master/animation/moveblocks.py
-		self.trans = LightWidget()
-		t2t = self.createLightState(self.trans)
-		t2t.setObjectName('t2t')
-		t2t.addTransition(t2t.finished, t2t)
+		trans = LightWidget()
 
 		hbox = QtWidgets.QHBoxLayout()
-		hbox.addWidget(self.trans)
-
+		hbox.addWidget(trans)
 		vbox = QtWidgets.QVBoxLayout(self)
 		vbox.addLayout(hbox)
 		vbox.setContentsMargins(0, 0, 0, 0)
 
+		state   = LightState(trans)
 		machine = QtCore.QStateMachine(self)
-		machine.addState(t2t)
-		machine.setInitialState(t2t)
+		machine.addState(state)
+		machine.setInitialState(state)
 		machine.start()
-
-	def createLightState(self, light):
-		lightState = QtCore.QState(None) # parent
-	
-		timer = QtCore.QTimer(lightState)
-		timer.setInterval(1000) # duration
-		timer.setSingleShot(True)
-	
-		timing = QtCore.QState(lightState)
-		timing.entered.connect(light.turnOn)
-		timing.entered.connect(timer.start)
-		timing.exited.connect(light.turnOff)
-	
-		done = QtCore.QFinalState(lightState)
-	
-		# ref.: https://github.com/pyqt/examples/blob/master/animation/moveblocks.py
-		timing.addTransition(timer.timeout, done)
-	
-		lightState.setInitialState(timing)
-		return lightState
-
 
 if __name__ == '__main__':
 	app = QtWidgets.QApplication(sys.argv)
