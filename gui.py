@@ -12,56 +12,12 @@ import numpy as np
 
 import threading 
 from collections import deque
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets, QtGui, QtCore, QtTest
 from termcolor import colored
 
 import config
 import sound
-
-class Card(QtWidgets.QPushButton):
-	def __init__(self, blank_icon_path=None):
-		super(Card, self).__init__()
-		self.setFixedSize(config.BUTTON_SIZE,config.BUTTON_SIZE)
-		self.setDefault(True)
-		self.setAutoDefault(False)
-
-	# https://stackoverflow.com/questions/20722823/qt-get-mouse-pressed-event-even-if-a-button-is-pressed
-	def mousePressEvent(self, ev):
-		QtWidgets.QMessageBox.warning(self, u'Mouse device', config.MOUSE_ERROR_MSG)
-
-	def set_icon(self, icon_path):
-		self.icon = QtGui.QIcon(QtGui.QPixmap(icon_path))
-		self.setIcon(self.icon)
-		self.setIconSize(QtCore.QSize(config.ICON_SIZE,config.ICON_SIZE))
-
-class Arrow(Card):
-	def __init__(self):
-		super(Arrow, self).__init__()
-		self.onVal = False
-		self.order = ['red', 'yellow', 'green']
-
-	def isOn(self):
-		return self.onVal
-
-	def setOn(self, on):
-		if self.onVal == on:
-			return
-		self.onVal = on
-		self.update()
-
-	@QtCore.pyqtSlot()
-	def turnOff(self): # FIXME if
-		self.setOn(False)
-
-	@QtCore.pyqtSlot()
-	def turnOn(self):
-		if len(self.order):
-			self.colour = self.order.pop(0)
-		self.setOn(True)
-		self.setFocus()
-		self.setStyleSheet('QPushButton::focus { background: %s; color: white; }' % self.colour)
-
-	on = QtCore.pyqtProperty(bool, isOn, setOn)
+from button import *
 
 class Board(QtWidgets.QMainWindow):
 	def __init__(self):
@@ -80,11 +36,18 @@ class Board(QtWidgets.QMainWindow):
 			'corner_bottom_right':(config.BOARD_DIM, config.BOARD_DIM),
 		}
 
+		self.light_machines = {
+			'up'   :None,
+			'down' :None,
+			'left' :None,
+			'right':None,
+		}
+
 		self.currs = {
-			'part' :0,    # 0:up, 1:down
-			'move' :None,
-			'coord':self.coord['center'],
-			'index':None,
+			'vdirect':'up',
+			'move'   :None,
+			'coord'  :self.coord['center'],
+			'index'  :None,
 		}
 
 		self.counters = {
@@ -118,13 +81,17 @@ class Board(QtWidgets.QMainWindow):
 		for i in range(config.BOARD_DIM+2):
 			if i == (config.BOARD_DIM+1) // 2:
 				for karrow in self.coord:
-					if 'arrow' in karrow:
-						arrow_icon_path = os.path.join(
-									config.ARROW_ICON_DIR, karrow + '_trans.png')
-						arrow = Arrow()
-						arrow.set_icon(arrow_icon_path)
-						self.grid.addWidget(arrow,
-									self.coord[karrow][0], self.coord[karrow][1])
+					if 'arrow' not in karrow:
+						continue
+					arrow_icon_path = os.path.join(
+								config.ARROW_ICON_DIR, karrow + '_trans.png')
+					arrow = LightArrow()
+					arrow.set_icon(arrow_icon_path)
+					self.grid.addWidget(arrow,
+								self.coord[karrow][0], self.coord[karrow][1])
+					state   = LightState(arrow)
+					machine = LightMachine(self, state)
+					self.light_machines[karrow.replace('arrow_','')] = machine
 			else:
 				card = Card()
 				card.setVisible(False)
@@ -170,10 +137,32 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'),            self, self.reset_board)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'),            self, self.start_game) 
 
-	# TODO
-	def start_game(self, curr_half='up'):
-		if curr_half == 'up':
+	def start_game(self):
+		if not self.is_path_set:
+			print('error: theres somthign really really wrong around here')
+			return
+		if self.currs['vdirect'] == 'down':
+			self.draw_bottom_path()
+		elif self.currs['vdirect'] == 'up':
 			self.draw_top_path()
+			for i in range(len(self.climbing['up_directions'])):
+				vdirect = self.climbing['up_directions'][i]
+				print(i, vdirect)
+				if vdirect == 'u':
+					machine = self.light_machines['up']
+				elif vdirect == 'l':
+					machine = self.light_machines['left']
+				elif vdirect == 'r':
+					machine = self.light_machines['right']
+				QtTest.QTest.qWait(100)
+				machine.start()
+				QtTest.QTest.qWait(4000)
+				machine.stop()
+				machine.state.light.restore()
+			machine.state.light.set_bg_colour('white')
+		else:
+			print('error: theres somthign really really wrong around here')
+			return
 
 	def reset_board(self):
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')

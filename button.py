@@ -40,6 +40,9 @@ class LightArrow(Card):
 		self.onVal = on
 		self.update()
 
+	def restore(self):
+		self.order = ['red', 'yellow', 'green', 'blue']
+
 	def set_bg_colour(self, colour):
 		self.setFocus()
 		self.setStyleSheet(config.HOVER_FOCUS_BG_COLOUR % colour)
@@ -60,14 +63,15 @@ class LightArrow(Card):
 class LightState(QtCore.QState):
 	def __init__(self, light):
 		super(LightState, self).__init__()
+		self.light = light
 		timer = QtCore.QTimer(self)
 		timer.setInterval(1000) # duration
 		timer.setSingleShot(True)
 
 		timing = QtCore.QState(self)
-		timing.entered.connect(light.turn_on)
+		timing.entered.connect(self.light.turn_on)
 		timing.entered.connect(timer.start)
-		timing.exited.connect(light.turn_off)
+		timing.exited.connect(self.light.turn_off)
 	
 		done = QtCore.QFinalState(self)
 
@@ -84,3 +88,4 @@ class LightMachine(QtCore.QStateMachine):
 		self.state = state
 		self.addState(self.state)
 		self.setInitialState(self.state)
+### EOF ###
