@@ -22,18 +22,16 @@ from button import *
 class Board(QtWidgets.QMainWindow):
 	def __init__(self):
 		super(Board, self).__init__()
-		self.is_path_set = False
 		self.coord = {
-			'center'     :((config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)//2),
-			'arrow_up'   :(0,                       (config.BOARD_DIM+1)//2),
-			'arrow_down' :(config.BOARD_DIM+1,      (config.BOARD_DIM+1)//2),
-			'arrow_left' :((config.BOARD_DIM+1)//2, 0),
-			'arrow_right':((config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)),
-			'corner_target':(),
-			'corner_top_left'    :(1,                1),
-			'corner_top_right'   :(1,                config.BOARD_DIM),
-			'corner_bottom_left' :(config.BOARD_DIM, 1),
-			'corner_bottom_right':(config.BOARD_DIM, config.BOARD_DIM),
+			'center'             :((config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)//2),
+			'arrow_up'           :(0,                       (config.BOARD_DIM+1)//2),
+			'arrow_down'         :(config.BOARD_DIM+1,      (config.BOARD_DIM+1)//2),
+			'arrow_left'         :((config.BOARD_DIM+1)//2, 0),
+			'arrow_right'        :((config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)),
+			'corner_top_left'    :(1,                       1),
+			'corner_top_right'   :(1,                       config.BOARD_DIM),
+			'corner_bottom_left' :(config.BOARD_DIM,        1),
+			'corner_bottom_right':(config.BOARD_DIM,        config.BOARD_DIM),
 		}
 
 		self.light_machines = {
@@ -44,10 +42,10 @@ class Board(QtWidgets.QMainWindow):
 		}
 
 		self.currs = {
-			'vdirect':'up',
-			'move'   :None,
-			'coord'  :self.coord['center'],
-			'index'  :None,
+			'vdir' :'up',
+			'coord':self.coord['center'],
+			'move' :None,
+			'index':None,
 		}
 
 		self.counters = {
@@ -62,7 +60,9 @@ class Board(QtWidgets.QMainWindow):
 			'down_directions':[]
 		}
 
-		self.corner_pair     = ()
+		self.is_path_set = False
+
+		self.corner_pair = ()
 
 		self.stream = None
 		self.grid   = None
@@ -141,28 +141,38 @@ class Board(QtWidgets.QMainWindow):
 		if not self.is_path_set:
 			print('error: theres somthign really really wrong around here')
 			return
-		if self.currs['vdirect'] == 'down':
+
+		if self.currs['vdir'] == 'down':
 			self.draw_bottom_path()
-		elif self.currs['vdirect'] == 'up':
+		elif self.currs['vdir'] == 'up':
 			self.draw_top_path()
-			for i in range(len(self.climbing['up_directions'])):
-				vdirect = self.climbing['up_directions'][i]
-				print(i, vdirect)
-				if vdirect == 'u':
-					machine = self.light_machines['up']
-				elif vdirect == 'l':
-					machine = self.light_machines['left']
-				elif vdirect == 'r':
-					machine = self.light_machines['right']
-				QtTest.QTest.qWait(100)
-				machine.start()
-				QtTest.QTest.qWait(4000)
-				machine.stop()
-				machine.state.light.restore()
-			machine.state.light.set_bg_colour('white')
 		else:
 			print('error: theres somthign really really wrong around here')
 			return
+
+		for i in range(len(self.climbing[self.currs['vdir'] + '_directions'])):
+			vdir = self.climbing[self.currs['vdir'] + '_directions'][i]
+			print(i, vdir)
+			if vdir == 'u':
+				machine = self.light_machines['up']
+			elif vdir == 'l':
+				machine = self.light_machines['left']
+			elif vdir == 'r':
+				machine = self.light_machines['right']
+			elif vdir == 'd':
+				machine = self.light_machines['down']
+			else:
+				print('error: vish maria')
+			QtTest.QTest.qWait(100)
+			machine.start()
+			QtTest.QTest.qWait(4000)
+			machine.stop()
+			machine.state.light.restore()
+		machine.state.light.set_bg_colour('white')
+
+		if self.currs['vdir'] == 'up':
+			self.currs['vdir'] = 'down'
+			self.start_game()
 
 	def reset_board(self):
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
@@ -184,7 +194,7 @@ class Board(QtWidgets.QMainWindow):
 			'down_directions':[]
 		}
 
-		self.corner_pair     = ()
+		self.corner_pair = ()
 		self.is_path_set = False
 
 	def set_board(self):
@@ -207,7 +217,7 @@ class Board(QtWidgets.QMainWindow):
 			self.corner_pair      = (self.coord['corner_top_right'], self.coord['corner_bottom_left'])
 			self.path_orientation = (('up','right'), ('down','left'))
 		else:
-			self.corner_pair     = (self.coord['corner_top_left'], self.coord['corner_bottom_right'])
+			self.corner_pair      = (self.coord['corner_top_left'], self.coord['corner_bottom_right'])
 			self.path_orientation = (('up','left'), ('down','right'))
 
 		directions = ('up','down')
@@ -270,7 +280,8 @@ class Board(QtWidgets.QMainWindow):
 		if not self.is_path_set:
 			return
 		self.set_board()
-		button = self.grid.itemAtPosition(self.corner_pair[1][0], self.corner_pair[1][1])
+		button = self.grid.itemAtPosition(
+					self.corner_pair[1][0], self.corner_pair[1][1])
 		button.widget().set_icon(os.path.join(
 					config.CLIMB_ICON_DIR, 'house_camp_no_climber.png'))
 		for i in range(len(self.climbing['down_path'])):
