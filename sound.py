@@ -15,6 +15,8 @@ OUTBOUND = wave.open(os.path.join(config.SOUNDS_DIR, 'outbound_01.wav'), 'rb')
 MATCH    = wave.open(os.path.join(config.SOUNDS_DIR, 'match_01.wav'),    'rb')
 UNMATCH  = wave.open(os.path.join(config.SOUNDS_DIR, 'unmatch_01.wav'),  'rb')
 WIN      = wave.open(os.path.join(config.SOUNDS_DIR, 'win_01.wav'),      'rb')
+REG_BEEP = wave.open(os.path.join(config.SOUNDS_DIR, 'regular_countdown_beep.wav'), 'rb')
+END_BEEP = wave.open(os.path.join(config.SOUNDS_DIR, 'final_countdown_beep.wav'),   'rb')
 
 p = pyaudio.PyAudio()
 ### EOF ###
