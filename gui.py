@@ -6,8 +6,6 @@
 
 import sys
 import os
-import time
-import pyaudio
 import numpy as np
 
 from collections import deque
