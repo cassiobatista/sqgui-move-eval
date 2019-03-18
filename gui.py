@@ -16,7 +16,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore, QtTest
 from termcolor import colored
 
 import config
-import sound
+from sound import Sound
 from button import *
 
 class Board(QtWidgets.QMainWindow):
@@ -64,7 +64,8 @@ class Board(QtWidgets.QMainWindow):
 
 		self.corner_pair = ()
 
-		self.stream = None
+		self.sound = Sound()
+
 		self.grid   = None
 
 		self.draw_board()
@@ -312,21 +313,17 @@ class Board(QtWidgets.QMainWindow):
 	#threading.Thread(target=self.play, args=(1.0,)).start()
 
 	def close(self):
-		if self.stream is not None and self.stream.is_active():
-			self.stream.stop_stream()
-		sound.MOVE.close()
-		sound.OUTBOUND.close()
-		sound.MATCH.close()
-		sound.UNMATCH.close()
-		sound.WIN.close()
-		sound.p.terminate()
+		if self.sound.stream is not None and self.sound.stream.is_active():
+			self.sound.stream.stop_stream()
+		self.sound.close()
 		QtWidgets.qApp.quit()
 
 	def win(self):
-		self.wav = sound.WIN
-		threading.Thread(target=self.play, args=(1.0,)).start()
+		self.sound.wav = self.sound.WIN
+		threading.Thread(target=self.sound.play, args=(1.0,)).start()
 		reply = QtWidgets.QMessageBox.information(self, 
 					u'You win', config.WIN_MSG, QtWidgets.QMessageBox.Ok)
+		self.sound.close()
 		self.close()
 
 	def on_up(self):
@@ -376,10 +373,10 @@ class Board(QtWidgets.QMainWindow):
 			new_col  = 1                 # limit the top edge
 			play_sound = False
 
-		if self.stream is not None and self.stream.is_active():
-			self.stream.stop_stream()
-			sound.MOVE.rewind()
-			sound.OUTBOUND.rewind()
+		if self.sound.stream is not None and self.sound.stream.is_active():
+			self.sound.stream.stop_stream()
+			self.sound.MOVE.rewind()
+			self.sound.OUTBOUND.rewind()
 
 		self.currs['coord'] = (new_row, new_col)
 		if self.is_path_set:
@@ -393,10 +390,10 @@ class Board(QtWidgets.QMainWindow):
 				print('errou mano')
 
 		if play_sound:
-			self.wav = sound.MOVE
+			self.sound.wav = self.sound.MOVE
 		else:
-			self.wav = sound.OUTBOUND
-		threading.Thread(target=self.play, args=(2.0,)).start()
+			self.sound.wav = self.sound.OUTBOUND
+		threading.Thread(target=self.sound.play, args=(2.0,)).start()
 
 		button = self.grid.itemAtPosition(new_row, new_col)
 		if button is None:
@@ -404,29 +401,6 @@ class Board(QtWidgets.QMainWindow):
 
 		button.widget().setFocus()
 		button.widget().setStyleSheet(config.HOVER_FOCUS_DISABLED)
-
-	def play(self, freq_factor):
-		self.wav.rewind()
-		if self.stream is not None and self.stream.is_active():
-			self.stream.stop_stream()
-		self.stream = sound.p.open(
-					format=sound.p.get_format_from_width(self.wav.getsampwidth()),
-					channels=self.wav.getnchannels(),
-					rate=int(self.wav.getframerate()*freq_factor),
-					output=True,
-					stream_callback=self.callback)
-		self.stream.start_stream()
-		while self.stream is not None and self.stream.is_active():
-			time.sleep(0.05)
-
-		if self.stream is not None:
-			self.stream.stop_stream()
-			self.stream.close()
-			self.stream = None
-
-	def callback(self, in_data, frame_count, time_info, status):
-		data = self.wav.readframes(frame_count)
-		return (data, pyaudio.paContinue)
 
 if __name__=='__main__':
 	app = QtWidgets.QApplication(sys.argv)
