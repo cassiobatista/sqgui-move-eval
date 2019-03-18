@@ -10,7 +10,6 @@ import time
 import pyaudio
 import numpy as np
 
-import threading 
 from collections import deque
 from PyQt5 import QtWidgets, QtGui, QtCore, QtTest
 from termcolor import colored
@@ -320,7 +319,7 @@ class Board(QtWidgets.QMainWindow):
 
 	def win(self):
 		self.sound.wav = self.sound.WIN
-		threading.Thread(target=self.sound.play, args=(1.0,)).start()
+		self.sound.play(1.0)
 		reply = QtWidgets.QMessageBox.information(self, 
 					u'You win', config.WIN_MSG, QtWidgets.QMessageBox.Ok)
 		self.sound.close()
@@ -358,20 +357,20 @@ class Board(QtWidgets.QMainWindow):
 		new_row = r + dy
 		new_col = c + dx
 
-		play_sound = True
+		self.sound.wav = self.sound.MOVE
 		if new_row   > config.BOARD_DIM:
 			new_row  = config.BOARD_DIM  # limit the right edge
-			play_sound = False
+			self.sound.wav = self.sound.OUTBOUND
 		elif new_row < 1:
 			new_row  = 1                 # limit the left edge
-			play_sound = False
+			self.sound.wav = self.sound.OUTBOUND
 
 		if new_col   > config.BOARD_DIM:
 			new_col  = config.BOARD_DIM  # limit the bottom edge
-			play_sound = False
+			self.sound.wav = self.sound.OUTBOUND
 		elif new_col < 1:
 			new_col  = 1                 # limit the top edge
-			play_sound = False
+			self.sound.wav = self.sound.OUTBOUND
 
 		if self.sound.stream is not None and self.sound.stream.is_active():
 			self.sound.stream.stop_stream()
@@ -389,11 +388,7 @@ class Board(QtWidgets.QMainWindow):
 				self.counters['errors'] += 1
 				print('errou mano')
 
-		if play_sound:
-			self.sound.wav = self.sound.MOVE
-		else:
-			self.sound.wav = self.sound.OUTBOUND
-		threading.Thread(target=self.sound.play, args=(2.0,)).start()
+		self.sound.play(2.0)
 
 		button = self.grid.itemAtPosition(new_row, new_col)
 		if button is None:

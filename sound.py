@@ -8,6 +8,7 @@ import os
 import wave
 import time
 import pyaudio
+import threading
 
 import config
 
@@ -20,6 +21,9 @@ class Sound:
 		self.open()
 
 	def play(self, freq_factor):
+		threading.Thread(target=self.play_bg, args=(freq_factor,)).start()
+
+	def play_bg(self, freq_factor):
 		self.wav.rewind()
 		if self.stream is not None and self.stream.is_active():
 			self.stream.stop_stream()
