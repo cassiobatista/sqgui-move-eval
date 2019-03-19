@@ -8,5 +8,5 @@ keys) in squared graphical interfaces
 ```bash
 sudo apt-get install python3 python3-pip
 sudo -H pip3 install --upgrade pip
-sudo -H pip3 install --upgrade numpy pyqt5 termcolor pyaudio
+sudo -H pip3 install --upgrade numpy pyqt5 termcolor pyaudio pyserial
 ```
