@@ -83,7 +83,7 @@ class Board(QtWidgets.QMainWindow):
 						continue
 					arrow_icon_path = os.path.join(
 								config.ARROW_ICON_DIR, karrow + '_trans.png')
-					arrow = LightArrow()
+					arrow = LightArrow(self.sound)
 					arrow.set_icon(arrow_icon_path)
 					self.grid.addWidget(arrow,
 								self.coord[karrow][0], self.coord[karrow][1])
@@ -150,7 +150,6 @@ class Board(QtWidgets.QMainWindow):
 
 		for i in range(len(self.climbing[self.currs['vdir'] + '_directions'])):
 			vdir = self.climbing[self.currs['vdir'] + '_directions'][i]
-			print(i, vdir)
 			if vdir == 'u':
 				machine = self.light_machines['up']
 			elif vdir == 'l':
@@ -161,11 +160,10 @@ class Board(QtWidgets.QMainWindow):
 				machine = self.light_machines['down']
 			else:
 				print('error: vish maria')
-			QtTest.QTest.qWait(100)
 			machine.start()
-			QtTest.QTest.qWait(4000)
+			QtTest.QTest.qWait(3200)
 			machine.stop()
-			machine.state.light.restore()
+			print('I\'m giving you a time to move now')
 		machine.state.light.set_bg_colour('white')
 
 		if self.currs['vdir'] == 'up':
@@ -310,6 +308,11 @@ class Board(QtWidgets.QMainWindow):
 	#threading.Thread(target=self.play, args=(1.0,)).start()
 
 	def close(self):
+		for machine in self.light_machines.values():
+			print('trying to close machine', machine)
+			if machine.isRunning():
+				machine.state.killTimer()
+				machine.stop()
 		if self.sound.stream is not None and self.sound.stream.is_active():
 			self.sound.stream.stop_stream()
 		self.sound.close()
