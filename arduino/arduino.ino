@@ -56,15 +56,20 @@ void loop()
 
 					if(lr>=2.5){
 						Serial.println("Right");
+						Keyboard.write(215);
 						eog=0;
 						delay(1000);
 					}
 					else if(lr<=1.1){
 						Serial.println("Left");
+						Keyboard.write(216);
+						eog=0;
 						delay(1000);
 					}
 					if(up<=1.1){
 						Serial.println("Down");
+						Keyboard.write(215);
+						eog=0;
 						delay(1000);
 					}
 
