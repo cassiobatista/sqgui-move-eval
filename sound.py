@@ -47,8 +47,6 @@ class Sound:
 		return (data, pyaudio.paContinue)
 
 	def open(self):
-		self.MOVE     = wave.open(os.path.join(config.SOUNDS_DIR, 'press_02.wav'),     'rb')
-		self.OUTBOUND = wave.open(os.path.join(config.SOUNDS_DIR, 'outbound_01.wav'),  'rb')
 		self.MATCH    = wave.open(os.path.join(config.SOUNDS_DIR, 'match_01.wav'),     'rb')
 		self.UNMATCH  = wave.open(os.path.join(config.SOUNDS_DIR, 'unmatch_01.wav'),   'rb')
 		self.WIN      = wave.open(os.path.join(config.SOUNDS_DIR, 'win_01.wav'),       'rb')
@@ -60,8 +58,6 @@ class Sound:
 			self.stream.stop_stream()
 			self.stream.close()
 			self.stream = None
-		self.MOVE.close()
-		self.OUTBOUND.close()
 		self.MATCH.close()
 		self.UNMATCH.close()
 		self.WIN.close()
