@@ -67,20 +67,20 @@ class LightState(QtCore.QState):
 	def __init__(self, light):
 		super(LightState, self).__init__()
 		self.light = light
-		timer = QtCore.QTimer(self)
-		timer.setInterval(1000) # duration
-		timer.setSingleShot(True)
+		self.timer = QtCore.QTimer(self)
+		self.timer.setInterval(1000) # duration
+		self.timer.setSingleShot(True)
 
-		timing = QtCore.QState(self)
-		timing.entered.connect(self.light.turn_on)
-		timing.entered.connect(timer.start)
-		timing.exited.connect(self.light.turn_off)
+		self.timing = QtCore.QState(self)
+		self.timing.entered.connect(self.light.turn_on)
+		self.timing.entered.connect(self.timer.start)
+		self.timing.exited.connect(self.light.turn_off)
 	
-		done = QtCore.QFinalState(self)
+		self.done = QtCore.QFinalState(self)
 
-		timing.addTransition(timer.timeout, done)
+		self.timing.addTransition(self.timer.timeout, self.done)
 	
-		self.setInitialState(timing)
+		self.setInitialState(self.timing)
 		self.setObjectName('state')
 		self.addTransition(self.finished, self)
 
@@ -92,8 +92,19 @@ class LightMachine(QtCore.QStateMachine):
 		self.addState(self.state)
 		self.setInitialState(self.state)
 
-	def start(self):
-		QtTest.QTest.qWait(200)
+	def start(self, grid):
+		QtTest.QTest.qWait(150)
 		super(LightMachine, self).start()
 		self.state.light.restore()
+		for i in range(1, config.BOARD_DIM+1):
+			for j in range(1, config.BOARD_DIM+1):
+				button = grid.itemAtPosition(i,j).widget()
+				button.setEnabled(False)
+
+	def stop(self, grid):
+		super(LightMachine, self).stop()
+		for i in range(1, config.BOARD_DIM+1):
+			for j in range(1, config.BOARD_DIM+1):
+				button = grid.itemAtPosition(i,j).widget()
+				button.setEnabled(True)
 ### EOF ###

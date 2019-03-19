@@ -11,10 +11,18 @@ import numpy as np
 from collections import deque
 from PyQt5 import QtWidgets, QtGui, QtCore, QtTest
 from termcolor import colored
+from serial import Serial
 
 import config
 from sound import Sound
-from button import *
+from button import Card, LightArrow, LightState, LightMachine
+
+class Arduino(Serial):
+	def __init__(self):
+		super(Arduino, self).__init__(config.ARDUINO_PORT, config.ARDUINO_BAUDRATE)
+	
+	def send(self):
+		self.write(str.encode(config.ARDUINO_MSG))
 
 class Board(QtWidgets.QMainWindow):
 	def __init__(self):
@@ -61,19 +69,21 @@ class Board(QtWidgets.QMainWindow):
 
 		self.corner_pair = ()
 
-		self.sound = Sound()
+		self.sound   = Sound()
+		self.grid    = QtWidgets.QGridLayout()
 
-		self.grid   = None
+		if ARDUINO_USED:
+			self.arduino = Arduino() # FIXME uncomment me
 
 		self.draw_board()
 		self.draw_arrows()
 		self.set_ui_elements()
 
 	def place_cursor_at_center(self, focus):
-		self.grid.itemAtPosition(self.coord['center'][0],
-					self.coord['center'][1]).widget().setFocus()
-		self.grid.itemAtPosition(self.coord['center'][0],
-					self.coord['center'][1]).widget().setStyleSheet(focus)
+		central_button = self.grid.itemAtPosition(
+					self.coord['center'][0], self.coord['center'][1]).widget()
+		central_button.setFocus()
+		central_button.setStyleSheet(focus)
 
 	def draw_arrows(self):
 		for i in range(config.BOARD_DIM+2):
@@ -100,7 +110,6 @@ class Board(QtWidgets.QMainWindow):
 
 	def draw_board(self):
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
-		self.grid = QtWidgets.QGridLayout()
 		for i in range(1, config.BOARD_DIM+1):
 			for j in range(1, config.BOARD_DIM+1):
 				card = Card()
@@ -114,7 +123,7 @@ class Board(QtWidgets.QMainWindow):
 		self.setCentralWidget(wg_central)
 
 		# set cursor to the central element 
-		self.place_cursor_at_center(config.HOVER_FOCUS_DISABLED)
+		self.place_cursor_at_center(config.HOVER_FOCUS_IDLE)
 
 		# https://www.tutorialspoint.com/pyqt/pyqt_qstatusbar_widget.htm
 		self.status_bar = QtWidgets.QStatusBar()
@@ -134,6 +143,19 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+2'),            self, self.draw_bottom_path)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'),            self, self.reset_board)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'),            self, self.start_game) 
+
+	def handle_kb_move(self):
+		print('I\'m giving you a time to move now')
+		self.sound.wav = self.sound.END_BEEP
+		self.sound.play(1.5)
+		QtTest.QTest.qWait(1000)
+		central_button = self.grid.itemAtPosition(
+					self.coord['center'][0], self.coord['center'][1]).widget()
+		central_button.setFocus()
+		central_button.setStyleSheet(config.HOVER_FOCUS_ENABLED)
+		if ARDUINO_USED:
+			self.arduino.send()
+		QtTest.QTest.qWait(2000)
 
 	def start_game(self):
 		if not self.is_path_set:
@@ -160,10 +182,10 @@ class Board(QtWidgets.QMainWindow):
 				machine = self.light_machines['down']
 			else:
 				print('error: vish maria')
-			machine.start()
-			QtTest.QTest.qWait(3200)
-			machine.stop()
-			print('I\'m giving you a time to move now')
+			machine.start(self.grid)
+			QtTest.QTest.qWait(3100)
+			machine.stop(self.grid)
+			self.handle_kb_move()
 		machine.state.light.set_bg_colour('white')
 
 		if self.currs['vdir'] == 'up':
@@ -270,7 +292,7 @@ class Board(QtWidgets.QMainWindow):
 		button = self.grid.itemAtPosition(
 					self.coord['center'][0], self.coord['center'][1])
 		button.widget().set_icon(png)
-		self.place_cursor_at_center(config.HOVER_FOCUS_LOADED)
+		self.place_cursor_at_center(config.HOVER_FOCUS_IDLE)
 
 	def draw_bottom_path(self):
 		if not self.is_path_set:
@@ -292,7 +314,7 @@ class Board(QtWidgets.QMainWindow):
 		button = self.grid.itemAtPosition(
 					self.coord['center'][0], self.coord['center'][1])
 		button.widget().set_icon(png)
-		self.place_cursor_at_center(config.HOVER_FOCUS_LOADED)
+		self.place_cursor_at_center(config.HOVER_FOCUS_IDLE)
 
 	def help(self):
 		QtWidgets.QMessageBox.information(self, u'Help', config.HELP_MSG)
@@ -302,20 +324,16 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QMessageBox.information(self, u'About', config.INFO)
 		return
 
-	#self.wav = sound.MATCH
-	#threading.Thread(target=self.play, args=(1.5,)).start()
-	#self.wav = sound.UNMATCH
-	#threading.Thread(target=self.play, args=(1.0,)).start()
-
 	def close(self):
 		for machine in self.light_machines.values():
-			print('trying to close machine', machine)
 			if machine.isRunning():
 				machine.state.killTimer()
 				machine.stop()
 		if self.sound.stream is not None and self.sound.stream.is_active():
 			self.sound.stream.stop_stream()
 		self.sound.close()
+		if ARDUINO_USED:
+			self.arduino.close()
 		QtWidgets.qApp.quit()
 
 	def win(self):
@@ -358,25 +376,18 @@ class Board(QtWidgets.QMainWindow):
 		new_row = r + dy
 		new_col = c + dx
 
-		self.sound.wav = self.sound.MOVE
 		if new_row   > config.BOARD_DIM:
 			new_row  = config.BOARD_DIM  # limit the right edge
-			self.sound.wav = self.sound.OUTBOUND
 		elif new_row < 1:
 			new_row  = 1                 # limit the left edge
-			self.sound.wav = self.sound.OUTBOUND
 
 		if new_col   > config.BOARD_DIM:
 			new_col  = config.BOARD_DIM  # limit the bottom edge
-			self.sound.wav = self.sound.OUTBOUND
 		elif new_col < 1:
 			new_col  = 1                 # limit the top edge
-			self.sound.wav = self.sound.OUTBOUND
 
 		if self.sound.stream is not None and self.sound.stream.is_active():
 			self.sound.stream.stop_stream()
-			self.sound.MOVE.rewind()
-			self.sound.OUTBOUND.rewind()
 
 		self.currs['coord'] = (new_row, new_col)
 		if self.is_path_set:
@@ -385,18 +396,20 @@ class Board(QtWidgets.QMainWindow):
 			if self.currs['coord'] == self.climbing['up_path'][self.currs['index']]:
 				self.currs['index'] += 1
 				print('acertou mano')
+				self.sound.wav = self.sound.MATCH
+				self.sound.play(1.5)
 			else:
 				self.counters['errors'] += 1
 				print('errou mano')
-
-		self.sound.play(2.0)
+				self.sound.wav = self.sound.UNMATCH
+				self.sound.play(1.0)
 
 		button = self.grid.itemAtPosition(new_row, new_col)
 		if button is None:
 			return
 
 		button.widget().setFocus()
-		button.widget().setStyleSheet(config.HOVER_FOCUS_DISABLED)
+		button.widget().setStyleSheet(config.HOVER_FOCUS_IDLE)
 
 if __name__=='__main__':
 	app = QtWidgets.QApplication(sys.argv)

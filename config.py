@@ -15,6 +15,11 @@ ARROW_ICON_DIR = os.path.join(RESOURCES_DIR, 'arrows')
 LINES_ICON_DIR = os.path.join(RESOURCES_DIR, 'lines')
 CLIMB_ICON_DIR = os.path.join(RESOURCES_DIR, 'climber')
 
+ARDUINO_USED     = False
+ARDUINO_PORT     = '/dev/ttyACM1'
+ARDUINO_BAUDRATE = 9600
+ARDUINO_MSG      = '@'
+
 BUTTON_SIZE = 100 # NOTE: pixels?
 ICON_SIZE   = 90  # NOTE: pixels?
 BOARD_DIM   = 5
@@ -35,23 +40,16 @@ assert BOARD_DIM % 2 == 1, \
 			u'as dimensões devem ser ímpares, retardado' if PT_BR else \
 			u'board dimensions must be odd, dumbass'
 
-HOVER_FOCUS_DISABLED = \
-	'QPushButton::focus { '    + \
-	'    background: red; '    + \
-	'    color: white; '       + \
-	'}'
-
-HOVER_FOCUS_LOADED = \
-	'QPushButton::focus { '    + \
-	'    background: yellow; ' + \
-	'    color: white; '       + \
-	'}'
-
 HOVER_FOCUS_BG_COLOUR = \
 	'QPushButton::focus { '    + \
 	'    background: %s; '     + \
 	'    color: white; '       + \
 	'}'
+
+HOVER_FOCUS_IDLE     = HOVER_FOCUS_BG_COLOUR % 'grey'
+HOVER_FOCUS_DISABLED = HOVER_FOCUS_BG_COLOUR % 'red'
+HOVER_FOCUS_LOADED   = HOVER_FOCUS_BG_COLOUR % 'yellow'
+HOVER_FOCUS_ENABLED  = HOVER_FOCUS_BG_COLOUR % 'green'
 
 WIN_MSG = \
 	u'Parabéns, você conseguiu!' if PT_BR else \
