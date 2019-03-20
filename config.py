@@ -103,3 +103,4 @@ HELP_MSG = WINDOW_TITLE  + '<br>' \
 	'<b>Ctrl+I</b>:  ' + (u'sobre a aplicação' if PT_BR else u'about app') + \
 	'<br>' + \
 	'<b>Ctrl+H</b>:  ' + (u'mostrar mensagem de ajuda' if PT_BR else u'show help message')
+### EOF ###
