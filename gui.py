@@ -48,6 +48,7 @@ class Board(QtWidgets.QMainWindow):
 
 		self.currs = {
 			'vdir' :'up',
+			'prev' :None,
 			'coord':self.coord['center'],
 			'move' :None,
 			'index':None,
@@ -148,10 +149,10 @@ class Board(QtWidgets.QMainWindow):
 		print('I\'m giving you a time to move now')
 		self.sound.play(self.sound.FINAL_BEEP, 1.5)
 		QtTest.QTest.qWait(1000)
-		central_button = self.grid.itemAtPosition(
-					self.coord['center'][0], self.coord['center'][1]).widget()
-		central_button.setFocus()
-		central_button.setStyleSheet(config.HOVER_FOCUS_ENABLED)
+		button = self.grid.itemAtPosition(
+					self.currs['coord'][0], self.currs['coord'][1]).widget()
+		button.setFocus()
+		button.setStyleSheet(config.HOVER_FOCUS_ENABLED)
 		if config.ARDUINO_USED:
 			self.arduino.send()
 		QtTest.QTest.qWait(2000)
@@ -187,9 +188,9 @@ class Board(QtWidgets.QMainWindow):
 			self.handle_kb_move()
 		machine.state.light.set_bg_colour('white')
 
-		if self.currs['vdir'] == 'up':
-			self.currs['vdir'] = 'down'
-			self.start_game()
+		#if self.currs['vdir'] == 'up':
+		#	self.currs['vdir'] = 'down'
+		#	self.start_game()
 
 	def reset_board(self):
 		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
@@ -265,8 +266,7 @@ class Board(QtWidgets.QMainWindow):
 					if y > config.BOARD_DIM:
 						continue
 				next_coord = (x,y)
-				if next_coord != self.corner_pair[i]:
-					self.climbing[directions[i] + '_path'].append(next_coord)
+				self.climbing[directions[i] + '_path'].append(next_coord)
 				self.climbing[directions[i] + '_directions'].append(next_direct[0])
 				curr_coord = next_coord
 		self.draw_top_path()
@@ -279,7 +279,7 @@ class Board(QtWidgets.QMainWindow):
 					self.corner_pair[0][0], self.corner_pair[0][1])
 		button.widget().set_icon(os.path.join(
 					config.CLIMB_ICON_DIR, 'mountain_top_no_climber.png'))
-		for i in range(len(self.climbing['up_path'])):
+		for i in range(len(self.climbing['up_path'])-1):
 			button = self.grid.itemAtPosition(
 						self.climbing['up_path'][i][0], self.climbing['up_path'][i][1])
 			png = ''.join(d for d in self.climbing['up_directions'][i:i+2]) + '.png'
@@ -301,7 +301,7 @@ class Board(QtWidgets.QMainWindow):
 					self.corner_pair[1][0], self.corner_pair[1][1])
 		button.widget().set_icon(os.path.join(
 					config.CLIMB_ICON_DIR, 'house_camp_no_climber.png'))
-		for i in range(len(self.climbing['down_path'])):
+		for i in range(len(self.climbing['down_path'])-1):
 			button = self.grid.itemAtPosition(
 						self.climbing['down_path'][i][0], self.climbing['down_path'][i][1])
 			png = ''.join(d for d in self.climbing['down_directions'][i:i+2]) + '.png'
@@ -336,6 +336,12 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.qApp.quit()
 
 	def win(self):
+		if self.sound.stream is not None and self.sound.stream.is_active():
+			self.sound.stream.stop_stream()
+		icon = os.path.join(config.CLIMB_ICON_DIR, 'mountain_top_climber.png')
+		button = self.grid.itemAtPosition(
+					self.currs['coord'][0], self.currs['coord'][1])
+		button.widget().set_icon(icon)
 		self.sound.play(self.sound.WIN, 1.0)
 		reply = QtWidgets.QMessageBox.information(self, 
 					u'You win', config.WIN_MSG, QtWidgets.QMessageBox.Ok)
@@ -387,14 +393,14 @@ class Board(QtWidgets.QMainWindow):
 		if self.sound.stream is not None and self.sound.stream.is_active():
 			self.sound.stream.stop_stream()
 
+		self.currs['prev']  = self.currs['coord']
 		self.currs['coord'] = (new_row, new_col)
 		if self.is_path_set:
-			if self.currs['coord'] == self.corner_pair[0]:
-				self.win()
 			if self.currs['coord'] == self.climbing['up_path'][self.currs['index']]:
 				self.currs['index'] += 1
 				print('acertou mano')
 				self.sound.play(self.sound.MATCH, 1.5)
+				self.move_correct()
 			else:
 				self.counters['errors'] += 1
 				print('errou mano')
@@ -406,6 +412,26 @@ class Board(QtWidgets.QMainWindow):
 
 		button.widget().setFocus()
 		button.widget().setStyleSheet(config.HOVER_FOCUS_IDLE)
+
+	def check_movement(self):
+		pass
+
+	def move_correct(self):
+		# set previous button the blank icon
+		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
+		button = self.grid.itemAtPosition(
+					self.currs['prev'][0], self.currs['prev'][1])
+		button.widget().set_icon(blank_icon_path)
+		# set current coord the climber icon
+		if self.corner_pair[0] == self.coord['corner_top_left']:
+			icon = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_left') + '.png'
+		else: 
+			icon = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_right') + '.png'
+		button = self.grid.itemAtPosition(
+					self.currs['coord'][0], self.currs['coord'][1])
+		button.widget().set_icon(icon)
+		if self.currs['coord'] == self.corner_pair[0]:
+			self.win()
 
 if __name__=='__main__':
 	app = QtWidgets.QApplication(sys.argv)
