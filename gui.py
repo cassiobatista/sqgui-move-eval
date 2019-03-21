@@ -41,6 +41,7 @@ class Board(QtWidgets.QMainWindow):
 			'last_correct':(),
 		}
 		self.coord['curr'] = self.coord['center']
+		self.coord['last_correct'] = self.coord['center']
 
 		self.light_machines = {
 			'up'   :None,
@@ -148,7 +149,7 @@ class Board(QtWidgets.QMainWindow):
 		self.sound.play(self.sound.FINAL_BEEP, 1.5)
 		QtTest.QTest.qWait(1000)
 		button = self.grid.itemAtPosition(
-					self.coord['curr'][0], self.coord['curr'][1]).widget()
+					self.coord['center'][0], self.coord['center'][1]).widget()
 		button.setFocus()
 		button.setStyleSheet(config.HOVER_FOCUS_ENABLED)
 		if config.ARDUINO_USED:
@@ -168,8 +169,8 @@ class Board(QtWidgets.QMainWindow):
 			print('error: theres somthign really really wrong around here')
 			return
 
-		for i in range(len(self.climbing[self.currs['vdir'] + '_directions'])):
-			vdir = self.climbing[self.currs['vdir'] + '_directions'][i]
+		while self.currs['index'] < len(self.climbing[self.currs['vdir'] + '_directions']):
+			vdir = self.climbing[self.currs['vdir'] + '_directions'][self.currs['index']]
 			if vdir == 'u':
 				machine = self.light_machines['up']
 			elif vdir == 'l':
@@ -372,9 +373,11 @@ class Board(QtWidgets.QMainWindow):
 		if idx == -1:
 			return
 
-		r, c, row_span, col_span = self.grid.getItemPosition(idx)
-		new_row = r + dy
-		new_col = c + dx
+		#r, c, row_span, col_span = self.grid.getItemPosition(idx)
+		#new_row = r + dy
+		#new_col = c + dx
+		new_row = self.coord['last_correct'][0] + dy
+		new_col = self.coord['last_correct'][1] + dx
 
 		if new_row   > config.BOARD_DIM:
 			new_row  = config.BOARD_DIM  # limit the right edge
@@ -395,12 +398,13 @@ class Board(QtWidgets.QMainWindow):
 			if self.coord['curr'] == self.climbing['up_path'][self.currs['index']]:
 				self.currs['index'] += 1
 				print('acertou mano')
-				self.sound.play(self.sound.MATCH, 1.5)
 				self.move_correct()
 			else:
 				self.counters['errors'] += 1
 				print('errou mano')
 				self.sound.play(self.sound.UNMATCH, 1.0)
+				self.coord['curr']         = self.coord['prev']
+				self.coord['last_correct'] = self.coord['prev']
 
 		button = self.grid.itemAtPosition(new_row, new_col)
 		if button is None:
@@ -413,6 +417,7 @@ class Board(QtWidgets.QMainWindow):
 		pass
 
 	def move_correct(self):
+		self.coord['last_correct'] = self.coord['curr']
 		# set previous button the blank icon
 		button = self.grid.itemAtPosition(
 					self.coord['prev'][0], self.coord['prev'][1])
@@ -427,6 +432,8 @@ class Board(QtWidgets.QMainWindow):
 		button.widget().set_icon(icon)
 		if self.coord['curr'] == self.corner_pair[0]:
 			self.win()
+		else:
+			self.sound.play(self.sound.MATCH, 1.5)
 
 if __name__=='__main__':
 	app = QtWidgets.QApplication(sys.argv)
