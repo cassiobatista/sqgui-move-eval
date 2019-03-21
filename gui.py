@@ -159,13 +159,10 @@ class Board(QtWidgets.QMainWindow):
 				machine = self.light_machines['down']
 				arrow_icon_path = os.path.join(
 							config.ARROW_ICON_DIR, 'arrow_down.png')
-			print('comecei', end=' ')
 			machine.start(self.grid)
 			QtTest.QTest.qWait(3100)
 			machine.stop(self.grid)
-			print('terminei', end=' ')
 			self.handle_kb_move(arrow_icon_path)
-			print('passei do handle kb %d', self.currs['index'])
 		machine.state.light.set_bg_colour('white')
 		self.win()
 
@@ -208,6 +205,12 @@ class Board(QtWidgets.QMainWindow):
 					self.coord['center'][1]).widget().setEnabled(True)
 
 	def calc_random_paths(self):
+		if self.currs['vdir'] == 'down':
+			QtWidgets.QMessageBox.warning(self, u'Warning', 
+						u'You cannot load new fresh paths ' + 
+						u'because you have already completed ' + 
+						u'the top path challenge. Press CTRL+P to start.')
+			return
 		self.reset_board()
 		self.set_board()
 		if np.random.choice((0,1)):
