@@ -8,7 +8,6 @@ import sys
 import os
 import numpy as np
 
-from collections import deque
 from PyQt5 import QtWidgets, QtGui, QtCore, QtTest
 from serial import Serial
 
