@@ -366,18 +366,20 @@ class Board(QtWidgets.QMainWindow):
 		self.move_focus(+1, 0)
 
 	def move_focus(self, dx, dy):
-		if self.currs['machine'] is not None:
-			if self.currs['machine'].flag:
-				print('preventing double move')
-				return
+		self.currs['num_moves'] += 1
+		if self.currs['machine'] is not None and self.currs['machine'].flag:
+			print('preventing double move')
+			return
 
 		self.currs['machine'].flag = True
 
 		if QtWidgets.qApp.focusWidget() == 0:
+			print('OLHA TO retornando aqui amigo')
 			return
 
 		idx = self.grid.indexOf(QtWidgets.qApp.focusWidget())
 		if idx == -1:
+			print('bicho deu -1 bem aqui')
 			return
 
 		button = self.grid.itemAtPosition(self.coord['center'][0], 
@@ -387,7 +389,6 @@ class Board(QtWidgets.QMainWindow):
 			return
 
 		button.unset_icon() # remove icon from central button 
-		self.currs['num_moves'] += 1
 
 		new_row = self.coord['last_correct'][0] + dy
 		new_col = self.coord['last_correct'][1] + dx
@@ -444,7 +445,6 @@ class Board(QtWidgets.QMainWindow):
 				icon = os.path.join(config.CLIMB_ICON_DIR, 'climb_down_left') + '.png'
 			self.grid.itemAtPosition(self.coord['current_move'][0], 
 						self.coord['current_move'][1]).widget().set_icon(icon)
-
 
 	def move_correct(self):
 		self.coord['last_correct'] = self.coord['current_move']
