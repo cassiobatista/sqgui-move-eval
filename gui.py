@@ -145,16 +145,18 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'),            self, self.reset_board)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'),            self, self.start_game) 
 
-	def handle_kb_move(self):
+	def handle_kb_move(self, icon_path):
 		self.sound.play(self.sound.FINAL_BEEP, 1.5)
 		QtTest.QTest.qWait(1000)
 		button = self.grid.itemAtPosition(
 					self.coord['center'][0], self.coord['center'][1]).widget()
 		button.setFocus()
+		button.set_icon(icon_path)
 		button.setStyleSheet(config.HOVER_FOCUS_ENABLED)
 		if config.ARDUINO_USED:
 			self.arduino.send()
 		QtTest.QTest.qWait(2000)
+		button.unset_icon()
 
 	def start_game(self):
 		if not self.is_path_set:
@@ -173,18 +175,26 @@ class Board(QtWidgets.QMainWindow):
 			vdir = self.climbing[self.currs['vdir'] + '_directions'][self.currs['index']]
 			if vdir == 'u':
 				machine = self.light_machines['up']
+				arrow_icon_path = os.path.join(
+							config.ARROW_ICON_DIR, 'arrow_up_trans.png')
 			elif vdir == 'l':
 				machine = self.light_machines['left']
+				arrow_icon_path = os.path.join(
+							config.ARROW_ICON_DIR, 'arrow_left_trans.png')
 			elif vdir == 'r':
 				machine = self.light_machines['right']
+				arrow_icon_path = os.path.join(
+							config.ARROW_ICON_DIR, 'arrow_right_trans.png')
 			elif vdir == 'd':
 				machine = self.light_machines['down']
+				arrow_icon_path = os.path.join(
+							config.ARROW_ICON_DIR, 'arrow_down_trans.png')
 			else:
 				print('error: vish maria')
 			machine.start(self.grid)
 			QtTest.QTest.qWait(3100)
 			machine.stop(self.grid)
-			self.handle_kb_move()
+			self.handle_kb_move(arrow_icon_path)
 		machine.state.light.set_bg_colour('white')
 
 		#if self.currs['vdir'] == 'up':
@@ -411,7 +421,10 @@ class Board(QtWidgets.QMainWindow):
 			return
 
 		button.widget().setFocus()
-		button.widget().setStyleSheet(config.HOVER_FOCUS_IDLE)
+		if self.coord['curr'] == self.coord['prev']: # error
+			button.widget().setStyleSheet(config.HOVER_FOCUS_DISABLED)
+		else:
+			button.widget().setStyleSheet(config.HOVER_FOCUS_ENABLED)
 
 	def check_movement(self):
 		pass
