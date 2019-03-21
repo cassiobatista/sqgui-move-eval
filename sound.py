@@ -13,17 +13,24 @@ import threading
 import config
 
 class Sound:
+	MATCH      = 0
+	UNMATCH    = 1
+	WIN        = 2
+	REG_BEEP   = 3
+	FINAL_BEEP = 4
 	def __init__(self):
 		super(Sound, self).__init__()
-		self.stream = None
-		self.wav    = None
-		self.p      = pyaudio.PyAudio()
+		self.stream  = None
+		self.wav     = None
+		self.effects = []
+		self.p       = pyaudio.PyAudio()
 		self.open()
 
-	def play(self, freq_factor):
-		threading.Thread(target=self.play_bg, args=(freq_factor,)).start()
+	def play(self, eff_idx, freq):
+		threading.Thread(target=self.play_bg, args=(eff_idx, freq,)).start()
 
-	def play_bg(self, freq_factor):
+	def play_bg(self, eff_index, freq_factor):
+		self.wav = self.effects[eff_index]
 		self.wav.rewind()
 		if self.stream is not None and self.stream.is_active():
 			self.stream.stop_stream()
@@ -47,21 +54,18 @@ class Sound:
 		return (data, pyaudio.paContinue)
 
 	def open(self):
-		self.MATCH    = wave.open(os.path.join(config.SOUNDS_DIR, 'match_01.wav'),     'rb')
-		self.UNMATCH  = wave.open(os.path.join(config.SOUNDS_DIR, 'unmatch_01.wav'),   'rb')
-		self.WIN      = wave.open(os.path.join(config.SOUNDS_DIR, 'win_01.wav'),       'rb')
-		self.REG_BEEP = wave.open(os.path.join(config.SOUNDS_DIR, 'reg_cd_beep.wav'),  'rb')
-		self.END_BEEP = wave.open(os.path.join(config.SOUNDS_DIR, 'final_cd_beep.wav'),'rb')
+		self.effects.append(wave.open(os.path.join(config.SOUNDS_DIR, 'match_01.wav'),     'rb'))
+		self.effects.append(wave.open(os.path.join(config.SOUNDS_DIR, 'unmatch_01.wav'),   'rb'))
+		self.effects.append(wave.open(os.path.join(config.SOUNDS_DIR, 'win_01.wav'),       'rb'))
+		self.effects.append(wave.open(os.path.join(config.SOUNDS_DIR, 'reg_cd_beep.wav'),  'rb'))
+		self.effects.append(wave.open(os.path.join(config.SOUNDS_DIR, 'final_cd_beep.wav'),'rb'))
 
 	def close(self):
 		if self.stream is not None:
 			self.stream.stop_stream()
 			self.stream.close()
 			self.stream = None
-		self.MATCH.close()
-		self.UNMATCH.close()
-		self.WIN.close()
-		self.REG_BEEP.close()
-		self.END_BEEP.close()
+		for eff in self.effects:
+			eff.close()
 		self.p.terminate()
 ### EOF ###

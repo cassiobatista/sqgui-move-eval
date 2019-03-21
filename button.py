@@ -30,7 +30,6 @@ class LightArrow(Card):
 		self.setFixedSize(config.BUTTON_SIZE,config.BUTTON_SIZE)
 		self.onVal = False
 		self.order = ['red', 'yellow', 'green']
-		self.sound.wav = self.sound.REG_BEEP
 
 	def is_on(self):
 		return self.onVal
@@ -43,7 +42,6 @@ class LightArrow(Card):
 
 	def restore(self):
 		self.order = ['red', 'yellow', 'green']
-		self.sound.wav = self.sound.REG_BEEP
 
 	def set_bg_colour(self, colour):
 		self.setFocus()
@@ -57,7 +55,7 @@ class LightArrow(Card):
 	def turn_on(self):
 		if len(self.order):
 			self.colour = self.order.pop(0)
-			self.sound.play(1.5)
+			self.sound.play(self.sound.REG_BEEP, 1.5)
 		self.set_on(True)
 		self.set_bg_colour(self.colour)
 

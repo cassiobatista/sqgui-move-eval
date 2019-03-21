@@ -69,11 +69,11 @@ class Board(QtWidgets.QMainWindow):
 
 		self.corner_pair = ()
 
-		self.sound   = Sound()
-		self.grid    = QtWidgets.QGridLayout()
+		self.sound = Sound()
+		self.grid  = QtWidgets.QGridLayout()
 
-		if ARDUINO_USED:
-			self.arduino = Arduino() # FIXME uncomment me
+		if config.ARDUINO_USED:
+			self.arduino = Arduino()
 
 		self.draw_board()
 		self.draw_arrows()
@@ -146,14 +146,13 @@ class Board(QtWidgets.QMainWindow):
 
 	def handle_kb_move(self):
 		print('I\'m giving you a time to move now')
-		self.sound.wav = self.sound.END_BEEP
-		self.sound.play(1.5)
+		self.sound.play(self.sound.FINAL_BEEP, 1.5)
 		QtTest.QTest.qWait(1000)
 		central_button = self.grid.itemAtPosition(
 					self.coord['center'][0], self.coord['center'][1]).widget()
 		central_button.setFocus()
 		central_button.setStyleSheet(config.HOVER_FOCUS_ENABLED)
-		if ARDUINO_USED:
+		if config.ARDUINO_USED:
 			self.arduino.send()
 		QtTest.QTest.qWait(2000)
 
@@ -332,13 +331,12 @@ class Board(QtWidgets.QMainWindow):
 		if self.sound.stream is not None and self.sound.stream.is_active():
 			self.sound.stream.stop_stream()
 		self.sound.close()
-		if ARDUINO_USED:
+		if config.ARDUINO_USED:
 			self.arduino.close()
 		QtWidgets.qApp.quit()
 
 	def win(self):
-		self.sound.wav = self.sound.WIN
-		self.sound.play(1.0)
+		self.sound.play(self.sound.WIN, 1.0)
 		reply = QtWidgets.QMessageBox.information(self, 
 					u'You win', config.WIN_MSG, QtWidgets.QMessageBox.Ok)
 		self.sound.close()
@@ -396,13 +394,11 @@ class Board(QtWidgets.QMainWindow):
 			if self.currs['coord'] == self.climbing['up_path'][self.currs['index']]:
 				self.currs['index'] += 1
 				print('acertou mano')
-				self.sound.wav = self.sound.MATCH
-				self.sound.play(1.5)
+				self.sound.play(self.sound.MATCH, 1.5)
 			else:
 				self.counters['errors'] += 1
 				print('errou mano')
-				self.sound.wav = self.sound.UNMATCH
-				self.sound.play(1.0)
+				self.sound.play(self.sound.UNMATCH, 1.0)
 
 		button = self.grid.itemAtPosition(new_row, new_col)
 		if button is None:
