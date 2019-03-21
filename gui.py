@@ -10,7 +10,6 @@ import numpy as np
 
 from collections import deque
 from PyQt5 import QtWidgets, QtGui, QtCore, QtTest
-from termcolor import colored
 from serial import Serial
 
 import config
@@ -37,7 +36,11 @@ class Board(QtWidgets.QMainWindow):
 			'corner_top_right'   :(1,                       config.BOARD_DIM),
 			'corner_bottom_left' :(config.BOARD_DIM,        1),
 			'corner_bottom_right':(config.BOARD_DIM,        config.BOARD_DIM),
+			'curr':(),
+			'prev':(),
+			'last_correct':(),
 		}
+		self.coord['curr'] = self.coord['center']
 
 		self.light_machines = {
 			'up'   :None,
@@ -48,8 +51,6 @@ class Board(QtWidgets.QMainWindow):
 
 		self.currs = {
 			'vdir' :'up',
-			'prev' :None,
-			'coord':self.coord['center'],
 			'move' :None,
 			'index':None,
 		}
@@ -144,11 +145,10 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'),            self, self.start_game) 
 
 	def handle_kb_move(self):
-		print('I\'m giving you a time to move now')
 		self.sound.play(self.sound.FINAL_BEEP, 1.5)
 		QtTest.QTest.qWait(1000)
 		button = self.grid.itemAtPosition(
-					self.currs['coord'][0], self.currs['coord'][1]).widget()
+					self.coord['curr'][0], self.coord['curr'][1]).widget()
 		button.setFocus()
 		button.setStyleSheet(config.HOVER_FOCUS_ENABLED)
 		if config.ARDUINO_USED:
@@ -199,7 +199,7 @@ class Board(QtWidgets.QMainWindow):
 
 		self.counters['moves']  = 0
 		self.counters['errors'] = 0
-		self.currs['coord'] = self.coord['center']
+		self.coord['curr'] = self.coord['center']
 		self.currs['index'] = 0
 
 		self.climbing = {
@@ -336,7 +336,7 @@ class Board(QtWidgets.QMainWindow):
 			self.sound.stream.stop_stream()
 		icon = os.path.join(config.CLIMB_ICON_DIR, 'mountain_top_climber.png')
 		button = self.grid.itemAtPosition(
-					self.currs['coord'][0], self.currs['coord'][1])
+					self.coord['curr'][0], self.coord['curr'][1])
 		button.widget().set_icon(icon)
 		self.sound.play(self.sound.WIN, 1.0)
 		reply = QtWidgets.QMessageBox.information(self, 
@@ -389,10 +389,10 @@ class Board(QtWidgets.QMainWindow):
 		if self.sound.stream is not None and self.sound.stream.is_active():
 			self.sound.stream.stop_stream()
 
-		self.currs['prev']  = self.currs['coord']
-		self.currs['coord'] = (new_row, new_col)
+		self.coord['prev'] = self.coord['curr']
+		self.coord['curr'] = (new_row, new_col)
 		if self.is_path_set:
-			if self.currs['coord'] == self.climbing['up_path'][self.currs['index']]:
+			if self.coord['curr'] == self.climbing['up_path'][self.currs['index']]:
 				self.currs['index'] += 1
 				print('acertou mano')
 				self.sound.play(self.sound.MATCH, 1.5)
@@ -415,7 +415,7 @@ class Board(QtWidgets.QMainWindow):
 	def move_correct(self):
 		# set previous button the blank icon
 		button = self.grid.itemAtPosition(
-					self.currs['prev'][0], self.currs['prev'][1])
+					self.coord['prev'][0], self.coord['prev'][1])
 		button.widget().unset_icon()
 		# set current coord the climber icon
 		if self.corner_pair[0] == self.coord['corner_top_left']:
@@ -423,9 +423,9 @@ class Board(QtWidgets.QMainWindow):
 		else: 
 			icon = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_right') + '.png'
 		button = self.grid.itemAtPosition(
-					self.currs['coord'][0], self.currs['coord'][1])
+					self.coord['curr'][0], self.coord['curr'][1])
 		button.widget().set_icon(icon)
-		if self.currs['coord'] == self.corner_pair[0]:
+		if self.coord['curr'] == self.corner_pair[0]:
 			self.win()
 
 if __name__=='__main__':
