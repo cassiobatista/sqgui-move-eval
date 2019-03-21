@@ -110,11 +110,9 @@ class Board(QtWidgets.QMainWindow):
 				self.grid.addWidget(card, config.BOARD_DIM+1, i)
 
 	def draw_board(self):
-		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
 		for i in range(1, config.BOARD_DIM+1):
 			for j in range(1, config.BOARD_DIM+1):
 				card = Card()
-				card.set_icon(blank_icon_path)
 				card.setEnabled(False)
 				self.grid.addWidget(card, i, j)
 
@@ -193,11 +191,10 @@ class Board(QtWidgets.QMainWindow):
 		#	self.start_game()
 
 	def reset_board(self):
-		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
 		for i in range(1, config.BOARD_DIM+1):
 			for j in range(1, config.BOARD_DIM+1):
 				button = self.grid.itemAtPosition(i, j)
-				button.widget().set_icon(blank_icon_path)
+				button.widget().unset_icon()
 				button.widget().setEnabled(False)
 
 		self.counters['moves']  = 0
@@ -216,12 +213,11 @@ class Board(QtWidgets.QMainWindow):
 		self.is_path_set = False
 
 	def set_board(self):
-		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
 		for i in range(1, config.BOARD_DIM+1):
 			for j in range(1, config.BOARD_DIM+1):
 				if (i,j) != self.coord['center']:
 					button = self.grid.itemAtPosition(i, j)
-					button.widget().set_icon(blank_icon_path)
+					button.widget().unset_icon()
 					button.widget().setEnabled(True)
 		button = self.grid.itemAtPosition(
 					self.coord['center'][0], self.coord['center'][1])
@@ -418,10 +414,9 @@ class Board(QtWidgets.QMainWindow):
 
 	def move_correct(self):
 		# set previous button the blank icon
-		blank_icon_path = os.path.join(config.LINES_ICON_DIR, 'blank.png')
 		button = self.grid.itemAtPosition(
 					self.currs['prev'][0], self.currs['prev'][1])
-		button.widget().set_icon(blank_icon_path)
+		button.widget().unset_icon()
 		# set current coord the climber icon
 		if self.corner_pair[0] == self.coord['corner_top_left']:
 			icon = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_left') + '.png'

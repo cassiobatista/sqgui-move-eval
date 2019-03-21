@@ -8,7 +8,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore, QtTest
 import config
 
 class Card(QtWidgets.QPushButton):
-	def __init__(self, blank_icon_path=None):
+	def __init__(self):
 		super(Card, self).__init__()
 		self.setFixedSize(config.BUTTON_SIZE,config.BUTTON_SIZE)
 		self.setDefault(True)
@@ -22,6 +22,9 @@ class Card(QtWidgets.QPushButton):
 		self.icon = QtGui.QIcon(QtGui.QPixmap(icon_path))
 		self.setIcon(self.icon)
 		self.setIconSize(QtCore.QSize(config.ICON_SIZE,config.ICON_SIZE))
+
+	def unset_icon(self):
+		self.setIcon(QtGui.QIcon())
 
 class LightArrow(Card):
 	def __init__(self, snd_obj):
