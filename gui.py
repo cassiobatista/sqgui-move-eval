@@ -117,12 +117,13 @@ class Board(QtWidgets.QMainWindow):
 
 	def wait(self, duration):
 		for tenth in range(duration//10, duration, duration//10):
+			print(tenth, end=' ')
 			QtTest.QTest.qWait(tenth)
 			if not self.keep_waiting:
 				break
 		self.keep_waiting = True
 		if self.currs['index'] < config.BOARD_DIM-1:
-			QtTest.QTest.qWait(int(tenth*1.5))
+			QtTest.QTest.qWait(int(tenth*1.0))
 
 	def handle_kb_move(self, icon_path):
 		self.sound.play(self.sound.FINAL_BEEP, 1.5)
@@ -134,9 +135,18 @@ class Board(QtWidgets.QMainWindow):
 		button.setStyleSheet(config.HOVER_FOCUS_ENABLED)
 		if config.ARDUINO_USED:
 			self.arduino.send()
-		self.wait(2500) # NOTE
+		self.wait(2000) # NOTE
+
+	def enable_board(self, flag):
+		for i in range(1, config.BOARD_DIM+1):
+			for j in range(1, config.BOARD_DIM+1):
+				button = self.grid.itemAtPosition(i, j).widget()
+				button.setEnabled(flag)
 
 	def start_game(self):
+		if not self.is_path_set:
+			return
+		self.enable_board(True)
 		if self.currs['vdir'] == 'down':
 			self.draw_bottom_path()
 		elif self.currs['vdir'] == 'up':
@@ -144,26 +154,26 @@ class Board(QtWidgets.QMainWindow):
 		while self.currs['index'] < len(self.climbing[self.currs['vdir'] + '_directions']):
 			vdir = self.climbing[self.currs['vdir'] + '_directions'][self.currs['index']]
 			if vdir == 'u':
-				machine = self.light_machines['up']
+				self.currs['machine'] = self.light_machines['up']
 				arrow_icon_path = os.path.join(
 							config.ARROW_ICON_DIR, 'arrow_up.png')
 			elif vdir == 'l':
-				machine = self.light_machines['left']
+				self.currs['machine'] = self.light_machines['left']
 				arrow_icon_path = os.path.join(
 							config.ARROW_ICON_DIR, 'arrow_left.png')
 			elif vdir == 'r':
-				machine = self.light_machines['right']
+				self.currs['machine'] = self.light_machines['right']
 				arrow_icon_path = os.path.join(
 							config.ARROW_ICON_DIR, 'arrow_right.png')
 			elif vdir == 'd':
-				machine = self.light_machines['down']
+				self.currs['machine'] = self.light_machines['down']
 				arrow_icon_path = os.path.join(
 							config.ARROW_ICON_DIR, 'arrow_down.png')
-			machine.start(self.grid)
+			self.currs['machine'].start(self.grid)
 			QtTest.QTest.qWait(3100)
-			machine.stop(self.grid)
+			self.currs['machine'].stop(self.grid)
 			self.handle_kb_move(arrow_icon_path)
-		machine.state.light.set_bg_colour('white')
+		self.currs['machine'].state.light.set_bg_colour('white')
 		self.win()
 
 	def reset_vars(self):
@@ -176,6 +186,7 @@ class Board(QtWidgets.QMainWindow):
 		self.currs = {
 			'vdir' :'up',
 			'index':0,
+			'machine':None,
 			'num_moves' :0,
 			'num_errors':0
 		}
@@ -199,14 +210,11 @@ class Board(QtWidgets.QMainWindow):
 				if (i,j) != self.coord['center']:
 					button = self.grid.itemAtPosition(i, j).widget()
 					button.unset_icon()
-					button.setEnabled(True)
 		self.is_path_set = True
-		self.grid.itemAtPosition(self.coord['center'][0], 
-					self.coord['center'][1]).widget().setEnabled(True)
 
 	def calc_random_paths(self):
 		if self.currs['vdir'] == 'down':
-			QtWidgets.QMessageBox.warning(self, u'Warning', 
+			QtWidgets.QMessageBox.warning(self, u'Warning',
 						u'You cannot load new fresh paths ' + 
 						u'because you have already completed ' + 
 						u'the top path challenge. Press CTRL+P to start.')
@@ -273,6 +281,7 @@ class Board(QtWidgets.QMainWindow):
 					self.coord['center'][0], self.coord['center'][1]).widget()
 		button.set_icon(png)
 		self.place_cursor_at_center(config.HOVER_FOCUS_IDLE)
+		self.enable_board(False)
 
 	def draw_bottom_path(self):
 		if not self.is_path_set:
@@ -294,6 +303,7 @@ class Board(QtWidgets.QMainWindow):
 					self.coord['center'][1]).widget()
 		button.set_icon(png)
 		self.place_cursor_at_center(config.HOVER_FOCUS_IDLE)
+		self.enable_board(False)
 
 	def help(self):
 		QtWidgets.QMessageBox.information(self, u'Help', config.HELP_MSG)
@@ -343,22 +353,26 @@ class Board(QtWidgets.QMainWindow):
 			self.draw_bottom_path()
 
 	def on_up(self):
-		self.currs['num_moves'] += 1
 		self.move_focus(0, -1)
 
 	def on_down(self):
-		self.currs['num_moves'] += 1
 		self.move_focus(0, +1)
 
 	def on_left(self):
-		self.currs['num_moves'] += 1
 		self.move_focus(-1, 0)
 
 	def on_right(self):
-		self.currs['num_moves'] += 1
 		self.move_focus(+1, 0)
 
 	def move_focus(self, dx, dy):
+		if self.currs['machine'] is not None and \
+			not self.currs['machine'].isRunning() and \
+			self.currs['machine'].flag:
+			print('preventing double move')
+			return
+		else:
+			self.currs['machine'].flag = True
+
 		if QtWidgets.qApp.focusWidget() == 0:
 			return
 
@@ -366,9 +380,14 @@ class Board(QtWidgets.QMainWindow):
 		if idx == -1:
 			return
 
-		# remove icon from central button 
-		self.grid.itemAtPosition(self.coord['center'][0], 
-					self.coord['center'][1]).widget().unset_icon()
+		button = self.grid.itemAtPosition(self.coord['center'][0], 
+					self.coord['center'][1]).widget()
+
+		if button.isEnabled() == False:
+			return
+
+		button.unset_icon() # remove icon from central button 
+		self.currs['num_moves'] += 1
 
 		new_row = self.coord['last_correct'][0] + dy
 		new_col = self.coord['last_correct'][1] + dx
@@ -407,10 +426,25 @@ class Board(QtWidgets.QMainWindow):
 		else:
 			button.widget().setStyleSheet(config.HOVER_FOCUS_ENABLED)
 
+		#self.enable_board(False)
+
 	def move_incorret(self):
 		self.sound.play(self.sound.UNMATCH, 1.0)
 		self.coord['current_move'] = self.coord['previous_move']
 		self.coord['last_correct'] = self.coord['previous_move']
+		if self.currs['vdir'] == 'up':
+			icon = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_right') + '.png'
+			if self.corner_pair[0] == self.coord['corner_top_left']:
+				icon = os.path.join(config.CLIMB_ICON_DIR, 'climb_up_left') + '.png'
+			self.grid.itemAtPosition(self.coord['current_move'][0], 
+						self.coord['current_move'][1]).widget().set_icon(icon)
+		else:
+			icon = os.path.join(config.CLIMB_ICON_DIR, 'climb_down_right') + '.png'
+			if self.corner_pair[1] == self.coord['corner_bottom_left']:
+				icon = os.path.join(config.CLIMB_ICON_DIR, 'climb_down_left') + '.png'
+			self.grid.itemAtPosition(self.coord['current_move'][0], 
+						self.coord['current_move'][1]).widget().set_icon(icon)
+
 
 	def move_correct(self):
 		self.coord['last_correct'] = self.coord['current_move']

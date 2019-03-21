@@ -92,11 +92,13 @@ class LightMachine(QtCore.QStateMachine):
 		self.state = state
 		self.addState(self.state)
 		self.setInitialState(self.state)
+		self.flag = True
 
 	def start(self, grid):
-		QtTest.QTest.qWait(150)
+		QtTest.QTest.qWait(50)
 		super(LightMachine, self).start()
 		self.state.light.restore()
+		self.flag = True
 		for i in range(1, config.BOARD_DIM+1):
 			for j in range(1, config.BOARD_DIM+1):
 				button = grid.itemAtPosition(i,j).widget()
@@ -104,6 +106,7 @@ class LightMachine(QtCore.QStateMachine):
 
 	def stop(self, grid):
 		super(LightMachine, self).stop()
+		self.flag = False
 		for i in range(1, config.BOARD_DIM+1):
 			for j in range(1, config.BOARD_DIM+1):
 				button = grid.itemAtPosition(i,j).widget()
