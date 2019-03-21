@@ -20,8 +20,8 @@ ARDUINO_PORT     = '/dev/ttyACM1'
 ARDUINO_BAUDRATE = 9600
 ARDUINO_MSG      = '@'
 
-BUTTON_SIZE = 100 # NOTE: pixels?
-ICON_SIZE   = 90  # NOTE: pixels?
+BUTTON_SIZE = 85  # NOTE: pixels?
+ICON_SIZE   = 75  # NOTE: pixels?
 BOARD_DIM   = 5
 
 assert BUTTON_SIZE > 0, \
@@ -52,8 +52,8 @@ HOVER_FOCUS_LOADED   = HOVER_FOCUS_BG_COLOUR % 'yellow'
 HOVER_FOCUS_ENABLED  = HOVER_FOCUS_BG_COLOUR % 'green'
 
 WIN_MSG = \
-	u'Parabéns, você conseguiu!' if PT_BR else \
-	u'Congratulations, you did it!'
+	u'Parabéns, você completou o módulo \'%s path\'!' if PT_BR else \
+	u'Congratulations, you finished the %s path!'
 
 WINDOW_TITLE = \
 	u'Joguinho em Python 3!' if PT_BR else \
