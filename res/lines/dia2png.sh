@@ -12,7 +12,8 @@ do
 done
 
 # -----------------------------------------------------
-mv halfline.png cr.png
+convert halfline.png -transparent white cr.png
+rm halfline.png
 cp cr.png lc.png
 
 convert lc.png -rotate -180 cl.png
