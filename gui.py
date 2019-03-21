@@ -348,6 +348,7 @@ class Board(QtWidgets.QMainWindow):
 			self.currs['index']      = 0
 			self.currs['num_moves']  = 0
 			self.currs['num_errors'] = 0 
+			self.currs['machine']    = None 
 			self.coord['current_move'] = self.coord['center']
 			self.coord['last_correct'] = self.coord['center']
 			self.draw_bottom_path()
@@ -365,13 +366,12 @@ class Board(QtWidgets.QMainWindow):
 		self.move_focus(+1, 0)
 
 	def move_focus(self, dx, dy):
-		if self.currs['machine'] is not None and \
-			not self.currs['machine'].isRunning() and \
-			self.currs['machine'].flag:
-			print('preventing double move')
-			return
-		else:
-			self.currs['machine'].flag = True
+		if self.currs['machine'] is not None:
+			if self.currs['machine'].flag:
+				print('preventing double move')
+				return
+
+		self.currs['machine'].flag = True
 
 		if QtWidgets.qApp.focusWidget() == 0:
 			return
@@ -383,7 +383,7 @@ class Board(QtWidgets.QMainWindow):
 		button = self.grid.itemAtPosition(self.coord['center'][0], 
 					self.coord['center'][1]).widget()
 
-		if button.isEnabled() == False:
+		if not button.isEnabled():
 			return
 
 		button.unset_icon() # remove icon from central button 
