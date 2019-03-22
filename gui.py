@@ -427,6 +427,7 @@ class Board(QtWidgets.QMainWindow):
 		self.currs['num_moves'] += 1
 		if self.currs['machine'] is not None and self.currs['machine'].flag:
 			print('preventing double move')
+			self.currs['num_errors'] += 1
 			return
 
 		self.currs['machine'].flag = True
