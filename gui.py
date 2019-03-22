@@ -7,6 +7,8 @@
 import sys
 import os
 import numpy as np
+import datetime
+import time
 
 from PyQt5 import QtWidgets, QtGui, QtCore, QtTest
 from serial import Serial
@@ -14,6 +16,34 @@ from serial import Serial
 import config
 from sound import Sound
 from button import Card, LightArrow, LightState, LightMachine
+
+class Time:
+	def __init__(self):
+		super(Time, self).__init__()
+		self._start_total    = None
+		self._stop_total     = None
+		self._start_specific = None
+		self._stop_specific  = None
+		self._all_times      = []
+
+	def start_total(self):
+		self._start_total = time.time()
+	
+	def stop_total(self):
+		self._stop_total = time.time()
+
+	def start_specific(self):
+		self._start_specific = time.time()
+
+	def stop_specific(self):
+		self._stop_specific = time.time()
+		self._all_times.append('%.3f' % (self._stop_specific - self._start_specific))
+
+	def get_total_time(self):
+		return self._stop_total - self._start_total # FIXME
+
+	def get_all_times(self):
+		return self._all_times
 
 class Arduino(Serial):
 	def __init__(self):
@@ -23,8 +53,9 @@ class Arduino(Serial):
 		self.write(str.encode(config.ARDUINO_MSG))
 
 class Board(QtWidgets.QMainWindow):
-	def __init__(self):
+	def __init__(self, outfile):
 		super(Board, self).__init__()
+		self.filename = outfile
 		self.coord = {
 			'center'             :((config.BOARD_DIM+1)//2, (config.BOARD_DIM+1)//2),
 			'arrow_up'           :(0,                       (config.BOARD_DIM+1)//2),
@@ -40,11 +71,16 @@ class Board(QtWidgets.QMainWindow):
 			'last_correct':(),
 		}
 
+		if os.path.isfile(self.filename):
+			print('warning: file "%s" exists and will be erased' % self.filename)
+			os.remove(self.filename)
+
 		self.reset_vars()
 
 		if config.ARDUINO_USED:
 			self.arduino = Arduino()
 		self.sound = Sound()
+		self.time  = Time()
 		self.grid  = QtWidgets.QGridLayout()
 
 		self.draw_board()
@@ -116,7 +152,6 @@ class Board(QtWidgets.QMainWindow):
 
 	def wait(self, duration):
 		for tenth in range(duration//10, duration, duration//10):
-			print(tenth, end=' ')
 			QtTest.QTest.qWait(tenth)
 			if not self.keep_waiting:
 				break
@@ -134,6 +169,7 @@ class Board(QtWidgets.QMainWindow):
 		button.setStyleSheet(config.HOVER_FOCUS_ENABLED)
 		if config.ARDUINO_USED:
 			self.arduino.send()
+		self.times[self.currs['vdir']].start_specific() # NOTE start time for mv
 		self.wait(2000) # NOTE
 
 	def enable_board(self, flag):
@@ -150,6 +186,7 @@ class Board(QtWidgets.QMainWindow):
 			self.draw_bottom_path()
 		elif self.currs['vdir'] == 'up':
 			self.draw_top_path()
+		self.times[self.currs['vdir']].start_total()
 		while self.currs['index'] < len(self.climbing[self.currs['vdir'] + '_directions']):
 			vdir = self.climbing[self.currs['vdir'] + '_directions'][self.currs['index']]
 			if vdir == 'u':
@@ -173,6 +210,7 @@ class Board(QtWidgets.QMainWindow):
 			self.currs['machine'].stop(self.grid)
 			self.handle_kb_move(arrow_icon_path)
 		self.currs['machine'].state.light.set_bg_colour('white')
+		self.times[self.currs['vdir']].stop_total()
 		self.win()
 
 	def reset_vars(self):
@@ -194,6 +232,10 @@ class Board(QtWidgets.QMainWindow):
 			'down_path':[],
 			'up_directions'  :[],
 			'down_directions':[]
+		}
+		self.times = {
+			'up':Time(),
+			'down':Time()
 		}
 
 	def reset_board(self):
@@ -324,6 +366,20 @@ class Board(QtWidgets.QMainWindow):
 			self.arduino.close()
 		QtWidgets.qApp.quit()
 
+	def print_stats(self):
+		print('number of movements:\t', self.currs['num_moves'])
+		print('number of errors:\t', self.currs['num_errors'])
+		print('number of correct:\t', self.currs['index'])
+		print('total time:\t\t', self.times[self.currs['vdir']].get_total_time())
+		print('times per movement:', self.times[self.currs['vdir']].get_all_times())
+		with open(self.filename, 'a') as f:
+			f.write(self.currs['vdir'] + ':\n')
+			f.write('  number of movements:\t' + str(self.currs['num_moves'])  + '\n')
+			f.write('  number of errors:\t'    + str(self.currs['num_errors']) + '\n')
+			f.write('  number of correct:\t'   + str(self.currs['index'])      + '\n')
+			f.write('  total time:\t\t'        + str(self.times[self.currs['vdir']].get_total_time()) + '\n')
+			f.write('  times per movement:\t'  + ', '.join(self.times[self.currs['vdir']].get_all_times())  + '\n')
+
 	def win(self):
 		if self.sound.stream is not None and self.sound.stream.is_active():
 			self.sound.stream.stop_stream()
@@ -338,6 +394,8 @@ class Board(QtWidgets.QMainWindow):
 		self.sound.play(self.sound.WIN, 1.0)
 		reply = QtWidgets.QMessageBox.information(self, u'You did it', 
 					config.WIN_MSG % self.currs['vdir'], QtWidgets.QMessageBox.Ok)
+
+		self.print_stats()
 
 		if self.currs['vdir'] == 'down':
 			self.sound.close()
@@ -365,6 +423,7 @@ class Board(QtWidgets.QMainWindow):
 		self.move_focus(+1, 0)
 
 	def move_focus(self, dx, dy):
+		self.times[self.currs['vdir']].stop_specific() # NOTE stop time for mv
 		self.currs['num_moves'] += 1
 		if self.currs['machine'] is not None and self.currs['machine'].flag:
 			print('preventing double move')
@@ -426,8 +485,6 @@ class Board(QtWidgets.QMainWindow):
 		else:
 			button.widget().setStyleSheet(config.HOVER_FOCUS_ENABLED)
 
-		#self.enable_board(False)
-
 	def move_incorret(self):
 		self.sound.play(self.sound.UNMATCH, 1.0)
 		self.coord['current_move'] = self.coord['previous_move']
@@ -467,8 +524,11 @@ class Board(QtWidgets.QMainWindow):
 				self.sound.play(self.sound.MATCH, 1.5)
 
 if __name__=='__main__':
+	if len(sys.argv) != 2:
+		print('usage: (python3) ./%s <out_stat_file>')
+		sys.exit(1)
 	app = QtWidgets.QApplication(sys.argv)
-	window = Board()
+	window = Board(sys.argv[1])
 	window.move(300,50)
 	window.setWindowTitle(config.WINDOW_TITLE)
 	window.show()
