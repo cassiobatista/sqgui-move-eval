@@ -40,7 +40,7 @@ class Time:
 		self._all_times.append('%.3f' % (self._stop_specific - self._start_specific))
 
 	def get_total_time(self):
-		return self._stop_total - self._start_total # FIXME
+		return '%.5f' % (self._stop_total - self._start_total)
 
 	def get_all_times(self):
 		return self._all_times
@@ -150,6 +150,7 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'),            self, self.reset_board)
 		QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+P'),            self, self.start_game) 
 
+	# gambiarra master
 	def wait(self, duration):
 		for tenth in range(duration//10, duration, duration//10):
 			QtTest.QTest.qWait(tenth)
@@ -233,10 +234,9 @@ class Board(QtWidgets.QMainWindow):
 			'up_directions'  :[],
 			'down_directions':[]
 		}
-		self.times = {
-			'up':Time(),
-			'down':Time()
-		}
+		self.times       = { 'up':Time(), 'down':Time() }
+		self.move_labels = { 'up':[], 'down':[] }
+		#self.mistakes    = { 'up':[], 'down':[] }
 
 	def reset_board(self):
 		for i in range(1, config.BOARD_DIM+1):
@@ -367,18 +367,26 @@ class Board(QtWidgets.QMainWindow):
 		QtWidgets.qApp.quit()
 
 	def print_stats(self):
-		print('number of movements:\t', self.currs['num_moves'])
-		print('number of errors:\t', self.currs['num_errors'])
-		print('number of correct:\t', self.currs['index'])
-		print('total time:\t\t', self.times[self.currs['vdir']].get_total_time())
-		print('times per movement:', self.times[self.currs['vdir']].get_all_times())
+		print('  number of movements:\t', self.currs['num_moves'])
+		print('  number of errors:\t', self.currs['num_errors'])
+		print('  number of correct:\t', self.currs['index'])
+		print('  total time:\t\t', self.times[self.currs['vdir']].get_total_time())
+		print('  times per movement:\t') 
+		for time, mvlab in \
+					zip(self.times[self.currs['vdir']].get_all_times(), 
+					self.move_labels[self.currs['vdir']]):
+			print('   ', time, mvlab)
 		with open(self.filename, 'a') as f:
 			f.write(self.currs['vdir'] + ':\n')
 			f.write('  number of movements:\t' + str(self.currs['num_moves'])  + '\n')
 			f.write('  number of errors:\t'    + str(self.currs['num_errors']) + '\n')
 			f.write('  number of correct:\t'   + str(self.currs['index'])      + '\n')
 			f.write('  total time:\t\t'        + str(self.times[self.currs['vdir']].get_total_time()) + '\n')
-			f.write('  times per movement:\t'  + ', '.join(self.times[self.currs['vdir']].get_all_times())  + '\n')
+			f.write('  times per movement:\t'  + '\n')
+			for time, mvlab in \
+						zip(self.times[self.currs['vdir']].get_all_times(), 
+						self.move_labels[self.currs['vdir']]):
+				f.write('    ' + time + '\t' +  mvlab + '\n')
 
 	def win(self):
 		if self.sound.stream is not None and self.sound.stream.is_active():
@@ -411,23 +419,24 @@ class Board(QtWidgets.QMainWindow):
 			self.draw_bottom_path()
 
 	def on_up(self):
-		self.move_focus(0, -1)
+		self.move_focus(0, -1, 'up')
 
 	def on_down(self):
-		self.move_focus(0, +1)
+		self.move_focus(0, +1, 'down')
 
 	def on_left(self):
-		self.move_focus(-1, 0)
+		self.move_focus(-1, 0, 'left')
 
 	def on_right(self):
-		self.move_focus(+1, 0)
+		self.move_focus(+1, 0, 'right')
 
-	def move_focus(self, dx, dy):
+	def move_focus(self, dx, dy, direct):
 		self.times[self.currs['vdir']].stop_specific() # NOTE stop time for mv
 		self.currs['num_moves'] += 1
 		if self.currs['machine'] is not None and self.currs['machine'].flag:
 			print('preventing double move')
 			self.currs['num_errors'] += 1
+			self.move_labels[self.currs['vdir']].append('double')
 			return
 
 		self.currs['machine'].flag = True
@@ -469,11 +478,15 @@ class Board(QtWidgets.QMainWindow):
 			self.keep_waiting = False
 			if self.coord['current_move'] == self.climbing[self.currs['vdir'] + '_path'][self.currs['index']]:
 				print('acertou mano')
+				self.move_labels[self.currs['vdir']].append('correct\t(%s)' % \
+							self.climbing[self.currs['vdir']+'_directions'][self.currs['index']])
 				self.currs['index'] += 1
 				self.move_correct()
 			else:
 				print('errou mano')
 				self.currs['num_errors'] += 1
+				self.move_labels[self.currs['vdir']].append('wrong\t(%s -> %s)' % \
+							(self.climbing[self.currs['vdir']+'_directions'][self.currs['index']], direct))
 				self.move_incorret()
 
 		button = self.grid.itemAtPosition(new_row, new_col)
