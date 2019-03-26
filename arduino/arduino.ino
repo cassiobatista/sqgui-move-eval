@@ -19,15 +19,19 @@ void setup()
 
 void loop()
 {
-	if(Serial.available() > 0) 
+	if(Serial.available() > 0) {
+
 		if(Serial.read() == 64){
-			Keyboard.write(218);
-			Serial.println("Up");
+			//Keyboard.write(218);
+			Serial.println("Recebi");
 			eog=1;
 			while(eog){
 				up = analogRead(0)*(5.0/1023.0);
-				lr = analogRead(1)*(5.0/1023.0);
-
+				lr = analogRead(3)*(5.0/1023.0);
+				if(up>=2.0 && up_flag==0){
+					up_flag=1;
+					inicio = millis();
+				}
 				while(up_flag==1){
 					up = analogRead(0)*(5.0/1023.0);
 					if(up<=1.8){
@@ -40,7 +44,7 @@ void loop()
 
 						if(tempo<180){
 							Serial.println("Blink is not a good movement");
-							eog=0;
+							//eog=0;
 							delay(1000);
 						}
 
@@ -78,4 +82,6 @@ void loop()
 
 			}
 		}
+	}
+
 }
