@@ -156,7 +156,6 @@ class Board(QtWidgets.QMainWindow):
 			QtTest.QTest.qWait(tenth)
 			if not self.keep_waiting:
 				break
-		self.keep_waiting = True
 		if self.currs['index'] < config.BOARD_DIM-1:
 			QtTest.QTest.qWait(int(tenth*1.0))
 
@@ -171,7 +170,12 @@ class Board(QtWidgets.QMainWindow):
 		if config.ARDUINO_USED:
 			self.arduino.send()
 		self.times[self.currs['vdir']].start_specific() # NOTE start time for mv
-		self.wait(2000) # NOTE
+		# XXX gambiarra
+		self.keep_waiting = True
+		for i in range(20):
+			self.wait(2000) # NOTE
+			if not self.keep_waiting:
+				break
 
 	def enable_board(self, flag):
 		for i in range(1, config.BOARD_DIM+1):
