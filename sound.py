@@ -27,7 +27,8 @@ class Sound:
 		self.open()
 
 	def play(self, eff_idx, freq):
-		threading.Thread(target=self.play_bg, args=(eff_idx, freq,)).start()
+		if config.SOUND_USED:
+			threading.Thread(target=self.play_bg, args=(eff_idx, freq,)).start()
 
 	def play_bg(self, eff_index, freq_factor):
 		self.wav = self.effects[eff_index]

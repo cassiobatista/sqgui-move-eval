@@ -20,6 +20,8 @@ ARDUINO_PORT     = '/dev/ttyACM1'
 ARDUINO_BAUDRATE = 9600
 ARDUINO_MSG      = '@'
 
+SOUND_USED       = False
+
 BUTTON_SIZE = 85  # NOTE: pixels?
 ICON_SIZE   = 75  # NOTE: pixels?
 BOARD_DIM   = 5
