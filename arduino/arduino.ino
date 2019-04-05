@@ -79,7 +79,7 @@ void loop()
 					eog=0;
 					delay(1000);
 				}
-				else if(up>=1.8){
+				else if(up>=2.5){
 					Serial.println("up");
 					eog=0;
 					Keyboard.write(218);
