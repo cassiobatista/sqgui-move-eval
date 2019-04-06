@@ -39,8 +39,8 @@ if __name__ == '__main__':
 	print('%d movements in total' % sum(sum(cf)))
 
 	plt.imshow(cf,cmap=plt.cm.Greys)
-	plt.xticks(np.arange(0,4), ['Up', 'Down', 'Left', 'Right'])
-	plt.yticks(np.arange(0,4), ['Up', 'Down', 'Left', 'Right'])
+	plt.xticks(np.arange(0,4), ['Cima', 'Baixo', 'Esquerda', 'Direita'])
+	plt.yticks(np.arange(0,4), ['Cima', 'Baixo', 'Esquerda', 'Direita'])
 	for i in range(4):
 		for j in range(4):
 			if cf[j][i] > 0:
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 							fontsize=18, color=color,
 							horizontalalignment='center', 
 							verticalalignment='center')
-	plt.xlabel('Predicted', fontsize=18)
-	plt.ylabel('Actual',    fontsize=18)
+	plt.xlabel('Valor previsto', fontsize=18)
+	plt.ylabel('Valor real',     fontsize=18)
 	plt.title(sys.argv[1], fontsize=20)
 	plt.show()
