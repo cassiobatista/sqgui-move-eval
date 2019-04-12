@@ -1,0 +1,29 @@
+up:
+  number of movements:	9
+  number of errors:	1
+  number of correct:	8
+  total time:		41.28813
+  times per movement:	
+    0.022	wrong	(r -> down)
+    0.324	correct	(r)
+    0.314	correct	(u)
+    0.345	correct	(u)
+    0.324	correct	(u)
+    0.324	correct	(u)
+    0.314	correct	(r)
+    0.273	correct	(r)
+    0.283	correct	(r)
+down:
+  number of movements:	8
+  number of errors:	0
+  number of correct:	8
+  total time:		36.62230
+  times per movement:	
+    0.314	correct	(d)
+    0.355	correct	(d)
+    0.335	correct	(l)
+    0.325	correct	(d)
+    0.012	correct	(l)
+    0.283	correct	(l)
+    0.313	correct	(l)
+    0.334	correct	(d)
