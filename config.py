@@ -15,7 +15,7 @@ ARROW_ICON_DIR = os.path.join(RESOURCES_DIR, 'arrows')
 LINES_ICON_DIR = os.path.join(RESOURCES_DIR, 'lines')
 CLIMB_ICON_DIR = os.path.join(RESOURCES_DIR, 'climber')
 
-ARDUINO_USED     = False
+ARDUINO_USED     = True
 ARDUINO_PORT     = '/dev/ttyACM1'
 ARDUINO_BAUDRATE = 9600
 ARDUINO_MSG      = '@'
