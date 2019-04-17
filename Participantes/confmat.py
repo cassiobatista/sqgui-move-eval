@@ -64,7 +64,6 @@ if __name__ == '__main__':
 	for i in range(4):
 		for j in range(4):
 			if cf[j][i] > 0:
-				print(len(glob.glob('*.txt')))
 				if len(sys.argv) == 2 and cf[j][i] > 3:
 					color = 'white'
 				elif cf[j][i] > 4*len(glob.glob('*.txt'))//2:
