@@ -40,13 +40,16 @@ def plot_cf_overview(cf):
 			calc_confusion_matrix(cf, f)
 	return cf
 
+# NOTE: 
+#   3.5 works good for 40
+#   5.0 works good for 80
 def normalize(cf):
 	for i in range(4):
-		cf[i][i] /= 3.5
+		cf[i][i] /= 5.0 # see NOTE above
 
 def denormalize(cf):
 	for i in range(4):
-		cf[i][i] *= 3.5
+		cf[i][i] *= 5.0 # see NOTE above
 
 if __name__ == '__main__':
 	if len(sys.argv) > 2:
