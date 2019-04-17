@@ -40,14 +40,21 @@ def plot_cf_overview(cf):
 			calc_confusion_matrix(cf, f)
 	return cf
 
+def normalize(cf):
+	for i in range(4):
+		cf[i][i] /= 3.5
+
+def denormalize(cf):
+	for i in range(4):
+		cf[i][i] *= 3.5
+
 if __name__ == '__main__':
 	if len(sys.argv) > 2:
 		print('passe um parâmetro ou não passe nada')
 		sys.exit(1)
 
-	cf = np.zeros((4,4), dtype=np.int16)
+	cf = np.zeros((4,4), dtype=np.float16)
 	d_arr = ['u', 'd', 'l', 'r']
-	print(cf, end='\n\n')
 	if len(sys.argv) == 2:
 		if os.path.isfile(sys.argv[1]):
 			cf = plot_cf_from_file(cf, sys.argv[1])
@@ -56,11 +63,13 @@ if __name__ == '__main__':
 			sys.exit(2)
 	else:
 		cf = plot_cf_overview(cf)
-	print(cf, '%d movements in total' % sum(sum(cf)))
+		normalize(cf)
+	print(cf, '\n%d movements in total' % sum(sum(cf)), end='\n\n')
 
-	plt.imshow(cf,cmap=plt.cm.Greys)
+	plt.imshow(np.array(cf, dtype=np.int16),cmap=plt.cm.Greys)
 	plt.xticks(np.arange(0,4), ['Cima', 'Baixo', 'Esquerda', 'Direita'])
 	plt.yticks(np.arange(0,4), ['Cima', 'Baixo', 'Esquerda', 'Direita'])
+	denormalize(cf)
 	for i in range(4):
 		for j in range(4):
 			if cf[j][i] > 0:
@@ -70,10 +79,11 @@ if __name__ == '__main__':
 					color = 'white'
 				else:
 					color = 'black'
-				plt.text(i, j, cf[j][i],
+				plt.text(i, j, int(cf[j][i]),
 							fontsize=18, color=color,
 							horizontalalignment='center', 
 							verticalalignment='center')
+	print(np.array(cf, dtype=np.int16))
 	plt.xlabel('Valor previsto', fontsize=18)
 	plt.ylabel('Valor real',     fontsize=18)
 	if len(sys.argv) == 2:
